@@ -39,7 +39,7 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee "$RUNNER_TEMP/gradle.log" || {
-            grep -E "What went wrong|error:|Error|FAILURE|> " "$RUNNER_TEMP/gradle.log" | head -40 | while IFS= read -r l; do echo "::error::$l"; done
+            { grep -E "^e: |error:|ERROR" "$RUNNER_TEMP/gradle.log" | head -15; grep -A 14 "What went wrong" "$RUNNER_TEMP/gradle.log"; } | grep -v "^> Task" | head -40 | while IFS= read -r l; do echo "::error::$l"; done
             exit 1; }
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk GeoVision-Collector.apk
 

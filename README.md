@@ -2,7 +2,7 @@
 
 Design field data forms, share them by link, QR code or poster, and collect points, lines and areas from any phone browser. Records go to your own Google Sheet (photos to your Google Drive) or to your own server.
 
-**Open the app:** https://rgiq2024.github.io/geovision-field-collector/
+**Open the app:** https://rgiq2024.github.io/GeoVision-Field-Collector/
 
 ## What it does
 
@@ -15,7 +15,7 @@ Design field data forms, share them by link, QR code or poster, and collect poin
 
 ## Phone apps
 
-Android and iPhone apps live in [`mobile/`](mobile/README.md). Each push builds an installable Android APK and publishes it on the [Releases page](https://github.com/rgiq2024/geovision-field-collector/releases/latest). The iPhone app needs an Apple Developer account to sign; see the mobile README.
+Android and iPhone apps live in [`mobile/`](mobile/README.md). Each push builds an installable Android APK and publishes it on the [Releases page](https://github.com/rgiq2024/GeoVision-Field-Collector/releases/latest). The iPhone app needs an Apple Developer account to sign; see the mobile README.
 
 ## Files
 

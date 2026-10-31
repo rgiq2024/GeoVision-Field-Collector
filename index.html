@@ -293,7 +293,7 @@ dl.kv dt{color:var(--muted)}dl.kv dd{margin:0;overflow-wrap:anywhere}
   .counts{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:520px){
-  .c-top .brand span{display:none}
+  .c-top .brand span:not(.brand-mark){display:none}
   .linkrow{grid-template-columns:1fr 1fr}
   .linkrow input{grid-column:1/-1}
   .formpick{margin-left:0;width:100%}
@@ -1197,9 +1197,9 @@ function reply_(o) {
 
 /* ================= APP HOME (installed app / phone) ================= */
 const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
-const WEB_APP='https://rgiq2024.github.io/geovision-field-collector/';
+const WEB_APP='https://rgiq2024.github.io/GeoVision-Field-Collector/';
 function rememberForm(form){store.set('gvc.lastForm',form);const list=store.get('gvc.phoneForms',[]).filter(f=>f.id!==form.id);list.unshift(Object.assign({},form,{_opened:Date.now()}));store.set('gvc.phoneForms',list.slice(0,20))}
-function openForm(f){location.replace(location.pathname+'#f='+encodeForm(f));location.reload()}
+function openForm(f){const hashOnly=!location.search;location.replace(location.pathname+'#f='+encodeForm(f));if(hashOnly)location.reload()}
 function goHome(){location.replace(location.pathname+'?app=1&home=1');}
 function formFromText(t){t=String(t||'').trim();const i=t.indexOf('#f=');const code=i>=0?t.slice(i+3):/^[A-Za-z0-9+\-_$.]{40,}$/.test(t)?t:'';if(!code)throw new Error('That is not a form link. It should contain “#f=”.');return decodeForm(code)}
 function readQR(file){return new Promise((res,rej)=>{if(!window.jsQR)return rej(new Error('The QR reader did not load.'));const u=URL.createObjectURL(file),img=new Image();img.onload=()=>{const tries=[1600,1000,700];for(const max of tries){const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);const x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);const d=x.getImageData(0,0,c.width,c.height);const q=jsQR(d.data,c.width,c.height,{inversionAttempts:'attemptBoth'});if(q&&q.data){URL.revokeObjectURL(u);return res(q.data)}}URL.revokeObjectURL(u);rej(new Error('No QR code found in that photo. Fill the frame with the code and try again.'))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('That photo could not be read.'))};img.src=u})}

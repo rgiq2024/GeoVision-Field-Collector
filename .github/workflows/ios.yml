@@ -25,8 +25,11 @@ jobs:
       - name: Build for the iPhone Simulator (checks the project compiles; no Apple account needed)
         working-directory: mobile/ios/App
         run: |
+          set -o pipefail
           xcodebuild -project App.xcodeproj -target App -configuration Debug \
-            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO SYMROOT="$PWD/build" build
+            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO SYMROOT="$PWD/build" build 2>&1 | tee "$RUNNER_TEMP/xcode.log" | grep -E "error:|warning: |BUILD" || {
+            grep -E "error:|fatal|BUILD FAILED" "$RUNNER_TEMP/xcode.log" | head -30 | while IFS= read -r l; do echo "::error::$l"; done
+            exit 1; }
           cd build/Debug-iphonesimulator && zip -qry "$GITHUB_WORKSPACE/GeoVision-Collector-simulator.zip" App.app
 
       - uses: actions/upload-artifact@v4

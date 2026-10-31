@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15201C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Collector">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}</style>
+</head>
+<body>
+<title>GeoVision Field Collector</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: survey-instrument shell. Dark band header with yellow level-marker accent; designer = palette | question list | live phone; collector = single 680px column. */
+:root{
+  --paper:#EEF1EC;--surface:#FFFFFF;--sunk:#E3E8E2;--ink:#15201C;--muted:#55635D;--line:#CFD7D1;
+  --accent:#E3A400;--on-accent:#1B1400;--teal:#0C665D;--teal-soft:#D7ECE6;--on-teal:#FFFFFF;
+  --ok:#1C7A3A;--warn:#A05F00;--bad:#B3261E;--map:#DCE2DD;
+  --band:#15201C;--on-band:#E9EFEA;--band-line:rgba(233,239,234,.22);
+  --dot-ok:#4CC46E;--dot-warn:#F0B523;--dot-off:#9AA7A2;--dot-bad:#F06A60;
+  --poster-bg:#FFFFFF;--poster-ink:#111814;--shadow:rgba(10,20,16,.18);
+  --f-disp:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0E1412;--surface:#161F1C;--sunk:#1E2A26;--ink:#E4ECE8;--muted:#98A69F;--line:#2C3934;
+  --accent:#F0B523;--on-accent:#1B1400;--teal:#5BC0B3;--teal-soft:#15312C;--on-teal:#08201C;
+  --ok:#5FC47C;--warn:#E3A24A;--bad:#F0786F;--map:#24302C;
+  --band:#09100D;--on-band:#E4ECE8;--band-line:rgba(228,236,232,.16);--shadow:rgba(0,0,0,.5);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0E1412;--surface:#161F1C;--sunk:#1E2A26;--ink:#E4ECE8;--muted:#98A69F;--line:#2C3934;
+  --accent:#F0B523;--on-accent:#1B1400;--teal:#5BC0B3;--teal-soft:#15312C;--on-teal:#08201C;
+  --ok:#5FC47C;--warn:#E3A24A;--bad:#F0786F;--map:#24302C;
+  --band:#09100D;--on-band:#E4ECE8;--band-line:rgba(228,236,232,.16);--shadow:rgba(0,0,0,.5);color-scheme:dark}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:1000;background:var(--band)}
+img{max-width:100%}
+h1,h2,h3{font-family:var(--f-disp);font-weight:600;letter-spacing:.01em;line-height:1.1;margin:0;text-wrap:balance}
+h3{font-size:20px}
+p{margin:0}
+a{color:var(--teal)}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.eyebrow{font:600 11.5px/1.2 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.micro{font-size:12.5px;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+textarea{resize:vertical}
+input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--teal)}
+input[type=range]{padding:0;border:0;background:none;accent-color:var(--teal)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:0;border-color:var(--teal)}
+button{font:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 14px;font-weight:500;text-decoration:none;white-space:nowrap;line-height:1.3}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.big{padding:14px 18px;font-size:16px;width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn[aria-pressed="true"]{background:var(--teal-soft);border-color:var(--teal);color:var(--teal)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.stack{display:grid;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+.chk{display:flex;gap:9px;align-items:center;font-size:14px;color:var(--ink);cursor:pointer}
+.note{border-left:3px solid var(--accent);background:var(--sunk);padding:10px 14px;border-radius:0 8px 8px 0;font-size:14px}
+.note.bad{border-left-color:var(--bad)}
+.note.ok{border-left-color:var(--ok)}
+.segs{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+.segs button{border:0;background:none;padding:8px 14px;color:var(--ink);font-weight:500;border-right:1px solid var(--line)}
+.segs button:last-child{border-right:0}
+.segs button[aria-pressed="true"]{background:var(--teal);color:var(--on-teal)}
+
+/* ---------- designer shell ---------- */
+.d-top{background:var(--band);color:var(--on-band);position:sticky;top:env(safe-area-inset-top,0px);z-index:900}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.d-top-in{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding-block:12px;max-width:1440px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px}
+.brand b{font-family:var(--f-disp);font-size:23px;font-weight:700;letter-spacing:.03em}
+.brand span{font:500 11px var(--f-mono);letter-spacing:.09em;text-transform:uppercase;opacity:.72}
+.brand-mark{width:26px;height:26px;border-radius:50%;background:var(--accent);position:relative;flex:none}
+.brand-mark::before,.brand-mark::after{content:"";position:absolute;background:var(--band)}
+.brand-mark::before{left:12px;top:4px;width:2px;height:18px}
+.brand-mark::after{top:12px;left:4px;height:2px;width:18px}
+.formpick{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;align-items:center}
+.formpick select{width:auto;max-width:min(300px,70vw);background:transparent;color:var(--on-band);border-color:var(--band-line)}
+.formpick select option{color:var(--ink);background:var(--surface)}
+.formpick .btn{background:transparent;color:var(--on-band);border-color:var(--band-line)}
+.formpick .btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.tabs{display:flex;gap:2px;overflow-x:auto;max-width:1440px;margin:0 auto;scrollbar-width:none}
+.tabs button{background:none;border:0;color:var(--on-band);opacity:.68;padding:9px 14px 10px;font:600 15px var(--f-disp);letter-spacing:.07em;text-transform:uppercase;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button:hover{opacity:.9}
+.tabs button[aria-selected="true"]{opacity:1;border-bottom-color:var(--accent)}
+.tabs .tcount{font:500 11px var(--f-mono);opacity:.75;margin-left:4px}
+.d-main{padding-block:22px 72px;max-width:1440px;margin:0 auto}
+.tab-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:10px;margin-bottom:16px}
+.tab-head h2{font-size:30px}
+.tab-head p{color:var(--muted);max-width:64ch}
+
+/* design tab */
+.d-grid{display:grid;grid-template-columns:210px minmax(0,1fr) 380px;gap:20px;align-items:start}
+.palette{position:sticky;top:132px;display:grid;gap:10px}
+.pal-list{display:grid;gap:4px}
+.pal-btn{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px 6px 6px;text-align:left;color:var(--ink);font-size:14px}
+.pal-btn:hover{border-color:var(--teal)}
+.chip{font:600 11px/1 var(--f-mono);min-width:32px;height:24px;display:inline-grid;place-items:center;border-radius:5px;background:var(--teal-soft);color:var(--teal);padding:0 5px;flex:none}
+.linkbtn{background:none;border:0;color:var(--teal);padding:4px 0;text-align:left;font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.builder{display:grid;gap:12px;min-width:0}
+.meta{display:grid;gap:10px}
+.meta input.title{font:600 24px/1.2 var(--f-disp);letter-spacing:.01em;padding:8px 10px}
+.qlist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.qi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);transition:box-shadow .15s}
+.qi.sel{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+.qi-row{display:flex;align-items:center;gap:10px;padding:9px 12px 9px 6px;min-width:0}
+.grip{cursor:grab;color:var(--muted);font:600 13px/1 var(--f-mono);letter-spacing:-3px;user-select:none;padding:8px 6px;touch-action:none}
+.qi-num{font:500 12px var(--f-mono);color:var(--muted);min-width:2ch}
+.qi-title{flex:1;min-width:0;background:none;border:0;text-align:left;padding:4px 0;color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qi-title .req{margin-left:3px}
+.badge{font:500 11px var(--f-mono);padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.badge.cond{background:var(--teal-soft);color:var(--teal)}
+.qi-type{font-size:12px;color:var(--muted);white-space:nowrap}
+.qe{border-top:1px solid var(--line);padding:14px;display:grid;gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end}
+.cond{border:1px dashed var(--line);border-radius:8px;padding:10px 12px 12px;display:grid;gap:8px;margin:0}
+.cond legend{font:600 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 4px}
+.qe-actions{display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+.qi.dragging{opacity:.4}
+.qi.drop-before{box-shadow:0 -3px 0 var(--accent)}
+.qi.drop-after{box-shadow:0 3px 0 var(--accent)}
+.empty{border:1px dashed var(--line);border-radius:var(--r);padding:28px;text-align:center;color:var(--muted)}
+.phone-wrap{position:sticky;top:132px;display:grid;gap:8px;justify-items:center}
+.phone{width:100%;max-width:370px;border:11px solid var(--band);border-radius:38px;background:var(--paper);overflow:hidden;box-shadow:0 24px 48px -24px var(--shadow)}
+.phone-bar{height:26px;background:var(--band);display:flex;justify-content:center}
+.phone-bar::after{content:"";width:90px;height:16px;border-radius:0 0 12px 12px;background:var(--band)}
+.phone-screen{height:min(690px,74vh);overflow-y:auto;padding:12px 12px 28px;overscroll-behavior:contain}
+.phone-screen .cf-title{font-size:23px}
+
+/* ---------- form (shared by preview + collector) ---------- */
+.cf{display:grid;gap:12px}
+.cf-head{padding:4px 2px 2px}
+.cf-title{font-size:28px}
+.cf-desc{color:var(--muted);margin-top:4px}
+.cf-q{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:9px;min-width:0}
+.cf-q.bad{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad)}
+.cf-label{font-weight:600;font-size:15px;line-height:1.35}
+.req{color:var(--bad);margin-left:3px;font-weight:600}
+.cf-hint{margin-top:-5px;font-size:13px;color:var(--muted)}
+.cf-err{color:var(--bad);font-size:13px;font-weight:500}
+.cf-empty{color:var(--muted);text-align:center;padding:30px 10px;border:1px dashed var(--line);border-radius:12px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--on-teal)}
+.opts{display:grid;gap:6px}
+.opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;min-width:0}
+.opt input{width:20px;height:20px;margin:0;flex:none}
+.opt span{min-width:0;overflow-wrap:anywhere}
+.opt:has(input:checked){border-color:var(--teal);background:var(--teal-soft)}
+.stars{display:flex;gap:2px;flex-wrap:wrap}
+.stars button{font-size:32px;line-height:1;background:none;border:0;color:var(--line);padding:2px 3px}
+.stars button.on{color:var(--accent)}
+.scale{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px;color:var(--muted)}
+.scale output{grid-column:1/-1;font:600 22px var(--f-mono);color:var(--ink)}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.thumbs:empty{display:none}
+.thumbs figure{margin:0;position:relative;width:86px;height:86px}
+.thumbs img{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.thumbs button{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:0;background:var(--band);color:var(--on-band);font-size:15px;line-height:1}
+.photo-add{position:relative;border-style:dashed;padding:14px;width:100%;cursor:pointer}
+.photo-add input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.sig{display:grid;gap:6px;justify-items:start}
+.sig canvas{width:100%;height:auto;aspect-ratio:640/220;border:1px dashed var(--muted);border-radius:10px;background:var(--poster-bg);touch-action:none;display:block}
+.geo-map{height:260px;border-radius:10px;border:1px solid var(--line);background:var(--map);isolation:isolate;position:relative}
+.geo-map.tapping{cursor:crosshair}
+.map-off{display:grid;place-items:center;height:100%;color:var(--muted);font-size:13px;padding:16px;text-align:center}
+.geo-bar{display:flex;flex-wrap:wrap;gap:6px}
+.gps-panel{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;border-radius:10px;background:var(--sunk)}
+.gps-read{flex:1 1 170px;font-size:13px}
+.good{color:var(--ok)}.fair{color:var(--warn)}.poor{color:var(--bad)}
+.geo-sum{font-size:12.5px;color:var(--muted)}
+
+/* ---------- collector shell ---------- */
+.c-top{background:var(--band);color:var(--on-band);position:sticky;top:env(safe-area-inset-top,0px);z-index:900}
+.c-top-in{max-width:680px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:10px}
+.brand.sm b{font-size:20px}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:99px;padding:6px 12px;border:1px solid var(--band-line);background:transparent;color:var(--on-band);font:500 13px var(--f-body);white-space:nowrap;max-width:60vw;overflow:hidden;text-overflow:ellipsis}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--dot-off);flex:none}
+.pill.ok .dot{background:var(--dot-ok)}.pill.warn .dot,.pill.busy .dot{background:var(--dot-warn)}.pill.bad .dot{background:var(--dot-bad)}
+.pill.busy .dot{animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+.c-main{max-width:680px;margin:0 auto;padding-block:16px 60px;display:grid;gap:12px}
+.c-who{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.c-who label{font-weight:600;font-size:14px}
+.c-foot{font-size:13px;color:var(--muted);text-align:center;padding:0 10px}
+.sheet{position:fixed;inset:0;z-index:1100;background:rgba(5,10,8,.5);display:flex;align-items:flex-end;justify-content:center}
+.sheet-card{background:var(--paper);width:100%;max-width:680px;max-height:88vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:14px}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet-head h2{font-size:26px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font:600 26px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.rec-list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.rec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.rec b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec small{color:var(--muted);font-size:12px}
+.tag{font:600 11px var(--f-mono);letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:99px;align-self:start}
+.tag.sent{background:var(--teal-soft);color:var(--teal)}
+.tag.pending{background:var(--sunk);color:var(--warn)}
+.tag.local{background:var(--sunk);color:var(--muted)}
+.tag.new{background:var(--accent);color:var(--on-accent)}
+
+/* ---------- other tabs ---------- */
+.two{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.mini-map{height:340px;border-radius:10px;border:1px solid var(--line);background:var(--map);isolation:isolate;position:relative}
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px}
+.steps li::before{content:counter(s);font:700 15px/28px var(--f-disp);width:28px;height:28px;border-radius:50%;text-align:center;background:var(--accent);color:var(--on-accent)}
+.code{position:relative;min-width:0}
+.code pre{margin:0;max-height:340px;overflow:auto;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:14px;font:12.5px/1.55 var(--f-mono);white-space:pre;tab-size:2}
+.code .btn{position:absolute;top:8px;right:8px}
+.dest-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.dest-opt{display:grid;gap:4px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;text-align:left;color:var(--ink)}
+.dest-opt b{font-family:var(--f-disp);font-size:19px;font-weight:600}
+.dest-opt span{font-size:13px;color:var(--muted)}
+.dest-opt[aria-pressed="true"]{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal);background:var(--teal-soft)}
+.linkrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
+.linkrow input{font:12.5px var(--f-mono)}
+dl.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:0;font-size:14px}
+dl.kv dt{color:var(--muted)}dl.kv dd{margin:0;overflow-wrap:anywhere}
+.poster{background:var(--poster-bg);color:var(--poster-ink);border:1px solid var(--line);border-radius:6px;padding:34px 30px 26px;display:grid;gap:16px;justify-items:center;text-align:center;aspect-ratio:1/1.414;max-width:460px;width:100%;margin:0 auto;align-content:start}
+.poster .p-eyebrow{font:600 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;border:2px solid var(--poster-ink);padding:4px 10px}
+.poster h2{font-size:38px;font-weight:700;line-height:1}
+.poster p{font-size:14px;max-width:34ch}
+.poster .qr{padding:10px;border:3px solid var(--poster-ink);background:#fff;line-height:0}
+.poster .qr img,.poster .qr canvas{width:220px;height:220px;max-width:100%}
+.poster ol{text-align:left;font-size:14px;margin:0;padding-left:20px;display:grid;gap:3px}
+.poster .p-foot{font:11px var(--f-mono);opacity:.7;margin-top:auto}
+.live-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}
+.counts{display:grid;grid-template-columns:repeat(4,minmax(80px,1fr));gap:8px}
+.live-grid{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;margin-top:16px}
+.live-map{height:540px;border-radius:var(--r);border:1px solid var(--line);background:var(--map);isolation:isolate;position:relative}
+.feed{display:grid;gap:8px;align-content:start;max-height:540px;overflow-y:auto}
+.feed .rec{animation:none}
+.feed .rec.fresh{border-color:var(--accent)}
+.lv-dot{width:16px;height:16px;border-radius:50%;background:var(--teal);border:2px solid var(--surface);box-shadow:0 1px 4px var(--shadow)}
+.lv-dot.pulse::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:3px solid var(--accent);animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{from{transform:scale(1);opacity:1}to{transform:scale(3.2);opacity:0}}
+.status-line{font-size:13px;color:var(--muted)}
+.status-line.bad{color:var(--bad)}
+.modal{position:fixed;inset:0;z-index:1200;background:rgba(5,10,8,.55);display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px))}
+.modal-card{background:var(--paper);border-radius:14px;max-width:860px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;display:grid;gap:16px}
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.tpl{display:grid;gap:6px;text-align:left;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.tpl:hover{border-color:var(--teal)}
+.tpl b{font-family:var(--f-disp);font-size:20px;font-weight:600}
+.tpl span{font-size:13px;color:var(--muted)}
+.tpl .eyebrow{color:var(--teal)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:var(--band);color:var(--on-band);padding:10px 16px;border-radius:10px;font-size:14px;z-index:1300;transition:.2s;max-width:min(520px,calc(100vw - 32px));box-shadow:0 10px 30px -10px var(--shadow)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.bad{border-left:4px solid var(--dot-bad)}#toast.ok{border-left:4px solid var(--dot-ok)}
+#printArea{display:none}
+
+@media (max-width:1180px){
+  .d-grid{grid-template-columns:minmax(0,1fr) 360px}
+  .palette{grid-column:1/-1;position:static}
+  .pal-list{display:flex;flex-wrap:wrap}
+  .phone-wrap{top:132px}
+}
+@media (max-width:900px){
+  .two,.live-grid{grid-template-columns:minmax(0,1fr)}
+  .live-map{height:380px}
+  .live-top{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:820px){
+  .d-grid{grid-template-columns:minmax(0,1fr)}
+  .phone-wrap{position:static}
+  .qi-type{display:none}
+  .counts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){
+  .c-top .brand span{display:none}
+  .linkrow{grid-template-columns:1fr 1fr}
+  .linkrow input{grid-column:1/-1}
+  .formpick{margin-left:0;width:100%}
+  .formpick select{flex:1}
+  .tab-head h2{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  body::before{display:none}
+  #printArea{display:block!important}
+  #printArea .poster{border:0;max-width:none;aspect-ratio:auto;padding:40px}
+  #printArea .poster .qr img{width:320px;height:320px}
+}
+
+/* Leaflet core (inlined; library CSS cannot load from the CDN here) */
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden;font:12px/1.4 var(--f-body);-webkit-tap-highlight-color:transparent}
+.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{user-select:none;-webkit-user-drag:none}
+.leaflet-container img.leaflet-tile,.leaflet-container .leaflet-marker-pane img,.leaflet-container .leaflet-tile-pane img{max-width:none!important;max-height:none!important;width:auto;padding:0}
+.leaflet-container img.leaflet-tile{mix-blend-mode:plus-lighter}
+.leaflet-container.leaflet-touch-zoom{touch-action:pan-x pan-y}
+.leaflet-container.leaflet-touch-drag{touch-action:none}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom{touch-action:none}
+.leaflet-tile{filter:inherit;visibility:hidden}
+.leaflet-tile-loaded{visibility:inherit}
+.leaflet-zoom-box{width:0;height:0;box-sizing:border-box;z-index:800}
+.leaflet-pane{z-index:400}.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-shadow-pane{z-index:500}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}
+.leaflet-map-pane canvas{z-index:100}.leaflet-map-pane svg{z-index:200}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto;float:left;clear:both}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
+.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}
+.leaflet-right .leaflet-control{float:right}
+.leaflet-top .leaflet-control{margin-top:10px}.leaflet-bottom .leaflet-control{margin-bottom:0}
+.leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:0}
+.leaflet-fade-anim .leaflet-popup{opacity:0;transition:opacity .2s linear}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}
+.leaflet-zoom-animated{transform-origin:0 0}
+.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
+.leaflet-zoom-anim .leaflet-tile,.leaflet-pan-anim .leaflet-tile{transition:none}
+.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}
+.leaflet-interactive{cursor:pointer}
+.leaflet-grab{cursor:grab}
+.tapping .leaflet-grab,.leaflet-crosshair{cursor:crosshair}
+.leaflet-dragging .leaflet-grab{cursor:grabbing}
+.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-image-layer,.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}
+.leaflet-marker-icon.leaflet-interactive,.leaflet-image-layer.leaflet-interactive,.leaflet-pane>svg path.leaflet-interactive{pointer-events:auto}
+.leaflet-container{background:var(--map);outline-offset:1px}
+.leaflet-bar{box-shadow:0 1px 5px var(--shadow);border-radius:6px}
+.leaflet-bar a{background:var(--surface);color:var(--ink);border-bottom:1px solid var(--line);width:30px;height:30px;line-height:30px;display:block;text-align:center;text-decoration:none;font:600 18px var(--f-mono)}
+.leaflet-bar a:first-child{border-radius:6px 6px 0 0}
+.leaflet-bar a:last-child{border-radius:0 0 6px 6px;border-bottom:0}
+.leaflet-control-attribution{background:var(--surface);opacity:.85;margin:0;padding:0 5px;color:var(--muted);font-size:10px;line-height:1.5}
+.leaflet-control-attribution a{color:var(--teal);text-decoration:none}
+.leaflet-attribution-flag{display:none!important}
+.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}
+.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:10px;background:var(--surface);color:var(--ink);box-shadow:0 3px 14px var(--shadow)}
+.leaflet-popup-content{margin:12px 16px;line-height:1.4;font-size:13px;min-height:1px;max-height:300px;overflow-y:auto}
+.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-top:-1px;margin-left:-20px;overflow:hidden;pointer-events:none}
+.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;transform:rotate(45deg);background:var(--surface)}
+.leaflet-popup-close-button{position:absolute;top:0;right:0;border:none;text-align:center;width:26px;height:26px;font:18px/26px var(--f-body);color:var(--muted);text-decoration:none;background:transparent}
+.leaflet-div-icon{background:none;border:none}
+.leaflet-control-layers{background:var(--surface);color:var(--ink);border-radius:6px;padding:6px 10px;box-shadow:0 1px 5px var(--shadow);font-size:13px}
+.leaflet-control-layers-toggle{display:none}
+.leaflet-control-layers label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.leaflet-control-layers-separator{display:none}
+.pop dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;margin:8px 0 0}
+.pop dt{color:var(--muted)}.pop dd{margin:0;overflow-wrap:anywhere}
+.pop img{max-width:160px;border-radius:6px;display:block}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<div id="designer" hidden>
+  <header class="d-top">
+    <div class="d-top-in gut">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span><b>GeoVision</b><span>Field data collection</span></div>
+      <div class="formpick">
+        <label for="formSel" class="sr">Form</label>
+        <select id="formSel"></select>
+        <button type="button" class="btn primary small" id="newBtn">New form</button>
+        <button type="button" class="btn small" id="dupBtn">Duplicate</button>
+        <button type="button" class="btn small" id="delBtn">Delete</button>
+      </div>
+    </div>
+    <nav class="tabs gut" role="tablist" aria-label="Form setup">
+      <button type="button" role="tab" data-tab="design" aria-selected="true">Design<span class="tcount" id="qCount"></span></button>
+      <button type="button" role="tab" data-tab="location">Location</button>
+      <button type="button" role="tab" data-tab="share">Share</button>
+      <button type="button" role="tab" data-tab="destination">Destination</button>
+      <button type="button" role="tab" data-tab="live">Live data</button>
+    </nav>
+  </header>
+
+  <main class="d-main gut">
+    <section id="tab-design" class="tab" role="tabpanel">
+      <div class="d-grid">
+        <aside class="palette" aria-label="Question types">
+          <p class="eyebrow">Add a question</p>
+          <div class="pal-list" id="palList"></div>
+          <button type="button" class="linkbtn" data-open-tpl>Start a new form from a template</button>
+        </aside>
+        <div class="builder">
+          <div class="meta card">
+            <label for="fTitle" class="sr">Form title</label>
+            <input id="fTitle" class="title" type="text" placeholder="Form title">
+            <label for="fDesc" class="sr">Description</label>
+            <textarea id="fDesc" rows="2" placeholder="Short instructions shown at the top of the form"></textarea>
+          </div>
+          <ol class="qlist" id="qlist"></ol>
+          <p class="empty" id="qEmpty" hidden>No questions yet. Pick a type on the left to add the first one.</p>
+        </div>
+        <aside class="phone-wrap" aria-label="Phone preview">
+          <p class="eyebrow">Phone preview · works like the real form</p>
+          <div class="phone"><div class="phone-bar"></div><div class="phone-screen" id="preview"></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-location" class="tab" role="tabpanel" hidden></section>
+    <section id="tab-share" class="tab" role="tabpanel" hidden></section>
+    <section id="tab-destination" class="tab" role="tabpanel" hidden></section>
+    <section id="tab-live" class="tab" role="tabpanel" hidden>
+      <div class="tab-head">
+        <div><h2>Live data</h2><p>Watch records arrive from the field. New records pulse on the map.</p></div>
+      </div>
+      <div class="card live-top">
+        <div class="stack">
+          <div class="row">
+            <button type="button" class="btn primary" id="liveBtn">Start live map</button>
+            <label for="liveEvery" class="micro">Refresh every</label>
+            <select id="liveEvery" style="width:auto">
+              <option value="5">5 seconds</option><option value="10" selected>10 seconds</option><option value="30">30 seconds</option><option value="60">1 minute</option><option value="300">5 minutes</option>
+            </select>
+          </div>
+          <p class="status-line" id="liveMsg">Live map reads records from your Google Sheet.</p>
+        </div>
+        <div class="counts">
+          <div class="stat"><b id="cTotal">0</b><span>Records</span></div>
+          <div class="stat"><b id="cToday">0</b><span>Today</span></div>
+          <div class="stat"><b id="cHour">0</b><span>Last hour</span></div>
+          <div class="stat"><b id="cWho">0</b><span>Collectors</span></div>
+        </div>
+      </div>
+      <div class="live-grid">
+        <div id="liveMap" class="live-map"></div>
+        <aside class="feed card" aria-label="Latest records">
+          <p class="eyebrow">Feed</p>
+          <ol class="rec-list" id="feed"></ol>
+        </aside>
+      </div>
+      <div class="card stack" style="margin-top:16px">
+        <h3>Import files from phones</h3>
+        <p class="micro">When collectors had no internet, they export a GeoJSON or CSV file from the phone and send it to you. Add all the files here at once. Records that are already loaded are skipped.</p>
+        <div class="row">
+          <label class="btn photo-add" style="width:auto">Choose files<input type="file" id="importIn" multiple accept=".geojson,.json,.csv,application/geo+json,application/json,text/csv"></label>
+          <button type="button" class="btn ghost" id="expAllGeo">Export all as GeoJSON</button>
+          <button type="button" class="btn ghost" id="expAllCsv">Export all as CSV</button>
+          <button type="button" class="btn ghost" id="clearLive">Clear loaded records</button>
+        </div>
+        <p class="status-line" id="importMsg"></p>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="tplModal" hidden role="dialog" aria-modal="true" aria-labelledby="tplTitle">
+    <div class="modal-card">
+      <div class="sheet-head"><h2 id="tplTitle">New form</h2><button type="button" class="btn ghost small" data-close>Close</button></div>
+      <div class="tpl-grid" id="tplGrid"></div>
+    </div>
+  </div>
+</div>
+
+<div id="collector" hidden></div>
+<div id="printArea"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+/* ================= basics ================= */
+const EMBED=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function uid(n){const a=new Uint8Array(n||10);crypto.getRandomValues(a);return [...a].map(b=>'abcdefghijkmnpqrstuvwxyz23456789'[b%32]).join('')}
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+const slug=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40)||'field';
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const nowTime=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
+const answered=v=>!(v===undefined||v===null||v===''||(typeof v==='number'&&isNaN(v))||(Array.isArray(v)&&!v.length));
+const hasNum=x=>x!==''&&x!=null&&!isNaN(Number(x));
+function toast(msg,kind){const t=$('#toast');t.textContent=msg;t.className='show '+(kind||'');clearTimeout(toast._t);toast._t=setTimeout(()=>{t.className=''},3600)}
+function hashStr(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return 'h'+(h>>>0).toString(36)}
+function ago(iso){const t=Date.parse(iso);if(!t)return '';const s=Math.round((Date.now()-t)/1000);if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+' min ago';if(s<86400)return Math.floor(s/3600)+' h ago';return new Date(t).toLocaleDateString()}
+async function copyText(text,btn){try{await navigator.clipboard.writeText(text);if(btn){const o=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=o,1600)}else toast('Copied','ok')}catch(e){toast('Copying is blocked here. Select the text and copy it yourself.','bad');return false}return true}
+function download(name,text,mime){const b=new Blob([text],{type:mime});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+
+/* ================= question types & templates ================= */
+const TYPES={
+  text:{n:'Short text',ic:'Ab',lim:'Characters'},
+  longtext:{n:'Long text',ic:'¶',lim:'Characters'},
+  number:{n:'Number',ic:'12',lim:'Value'},
+  email:{n:'Email',ic:'@'},
+  phone:{n:'Phone',ic:'Tel'},
+  date:{n:'Date',ic:'Dt',lim:'Date'},
+  time:{n:'Time',ic:'Hr'},
+  yesno:{n:'Yes / No',ic:'Y/N'},
+  single:{n:'Single choice',ic:'(•)',opts:1},
+  multi:{n:'Multiple choice',ic:'[✓]',opts:1,lim:'Selections'},
+  dropdown:{n:'Dropdown',ic:'▾',opts:1},
+  rating:{n:'Rating',ic:'★'},
+  scale:{n:'Slider',ic:'—•—',lim:'Value'},
+  photo:{n:'Photo',ic:'Cam'},
+  signature:{n:'Signature',ic:'Sig'}
+};
+const BASE_COLS=['id','submitted_at','collected_at','collector','geometry_type','latitude','longitude','accuracy_m','geometry'];
+function newQ(type,label){
+  const q={id:uid(6),type,label:label||TYPES[type].n,name:'',hint:'',req:false,def:''};
+  if(TYPES[type].opts)q.opts=['Option 1','Option 2','Option 3'];
+  if(type==='rating')q.max=5;
+  if(type==='scale'){q.min=0;q.max=10}
+  if(type==='photo')q.max=1;
+  return q;
+}
+const Q=(t,l,x)=>Object.assign(newQ(t,l),x||{});
+const TEMPLATES=[
+ {key:'survey',name:'General survey',geo:'point',intro:'Record what you see at each site.',blurb:'Site name, category, condition, notes and photos at a point.',
+  build(){return[Q('text','Site name',{req:true,max:80}),Q('date','Visit date',{def:'today'}),Q('single','Category',{opts:['Residential','Commercial','Public building','Open space','Other'],req:true}),Q('rating','Overall condition',{max:5,hint:'1 is very poor, 5 is excellent'}),Q('longtext','Notes',{hint:'Anything unusual about this site'}),Q('photo','Photos',{max:3})]}},
+ {key:'damage',name:'Damage assessment',geo:'point',intro:'Rapid assessment of buildings after an event. One record per structure.',blurb:'Damage level, occupancy, hazards and photo evidence.',
+  build(){const occ=Q('yesno','Is the building occupied?',{req:true});const haz=Q('yesno','Any immediate hazards?',{req:true});
+   return[Q('dropdown','Structure type',{opts:['House','Apartment block','School','Health facility','Shop or market','Road or bridge','Other'],req:true,name:'structure'}),
+   Q('single','Damage level',{opts:['None','Minor','Moderate','Severe','Destroyed'],req:true,hint:'Severe means it is not safe to enter',name:'damage_level'}),
+   occ,Q('number','People living here',{min:0,max:500,cond:{q:occ.id,op:'eq',v:'yes'},name:'occupants'}),
+   haz,Q('multi','Hazards present',{opts:['Gas leak','Exposed wiring','Unstable walls','Flooding','Fire','Debris on road'],req:true,min:1,cond:{q:haz.id,op:'eq',v:'yes'},name:'hazards'}),
+   Q('photo','Damage photos',{max:3,min:1,req:true,hint:'Front of the building first, then the worst damage'}),
+   Q('yesno','Needs urgent follow-up?',{name:'urgent'}),Q('longtext','Notes')]}},
+ {key:'trees',name:'Tree inventory',geo:'point',intro:'One record per tree. Measure trunk diameter at 1.3 m above ground.',blurb:'Species, DBH, height, health and risk for each tree.',
+  build(){const sp=Q('dropdown','Species',{opts:['Ghaf (Prosopis cineraria)','Date palm','Neem','Sidr (Ziziphus)','Acacia','Other'],req:true,name:'species'});const risk=Q('yesno','Is the tree a risk to people or property?',{name:'risk'});
+   return[Q('text','Tree tag number',{hint:'From the metal tag, if there is one',name:'tag'}),sp,Q('text','Other species',{cond:{q:sp.id,op:'eq',v:'Other'},req:true,name:'species_other'}),
+   Q('number','Trunk diameter (DBH, cm)',{min:1,max:400,req:true,name:'dbh_cm'}),Q('number','Height (m)',{min:0,max:120,name:'height_m'}),
+   Q('single','Health',{opts:['Good','Fair','Poor','Dead'],req:true,name:'health'}),Q('rating','Canopy condition',{max:5,name:'canopy'}),
+   risk,Q('longtext','Describe the risk',{cond:{q:risk.id,op:'eq',v:'yes'},req:true,name:'risk_notes'}),Q('photo','Photo of the tree',{max:2})]}},
+ {key:'route',name:'Route mapping',geo:'line',intro:'Walk or drive the route and add points as you go, or trace it on the map.',blurb:'Trace a road, path or pipeline with surface and condition.',
+  build(){const pass=Q('yesno','Passable by car?',{req:true,name:'passable'});
+   return[Q('text','Route name',{req:true,name:'route_name'}),Q('dropdown','Surface',{opts:['Asphalt','Gravel','Sand','Earth','Concrete','Mixed'],name:'surface'}),
+   Q('rating','Surface condition',{max:5,name:'condition'}),pass,Q('multi','What blocks it?',{opts:['Flooding','Debris','Sand drift','Broken bridge','Checkpoint','Other'],cond:{q:pass.id,op:'eq',v:'no'},name:'blockage'}),
+   Q('scale','Usable width (m)',{min:0,max:20,name:'width_m'}),Q('photo','Photos along the route',{max:4})]}},
+ {key:'area',name:'Area mapping',geo:'polygon',intro:'Walk the boundary and add a GPS point at each corner, or tap the corners on the map.',blurb:'Outline plots, fields or zones with land use and cover.',
+  build(){return[Q('text','Area name',{req:true,name:'area_name'}),Q('dropdown','Land use',{opts:['Agriculture','Residential','Industrial','Grazing','Conservation','Vacant','Other'],req:true,name:'land_use'}),
+   Q('single','Ownership',{opts:['Private','Government','Community','Unknown'],name:'ownership'}),Q('scale','Vegetation cover (%)',{min:0,max:100,name:'veg_cover_pct'}),
+   Q('date','Survey date',{def:'today'}),Q('longtext','Notes'),Q('photo','Photos',{max:3})]}},
+ {key:'inspect',name:'Asset inspection',geo:'point',intro:'Inspect each asset and sign off at the end.',blurb:'Asset ID, status, faults, priority and inspector signature.',
+  build(){const w=Q('yesno','Is it working?',{req:true,name:'working'});
+   return[Q('text','Asset ID',{req:true,hint:'As printed on the asset label',name:'asset_id'}),Q('dropdown','Asset type',{opts:['Water pump','Street light','Manhole','Electrical cabinet','Bus stop','Fire hydrant','Other'],req:true,name:'asset_type'}),
+   w,Q('multi','Faults found',{opts:['No power','Leak','Corrosion','Vandalism','Missing cover','Blocked'],cond:{q:w.id,op:'eq',v:'no'},req:true,name:'faults'}),
+   Q('single','Repair priority',{opts:['Low','Medium','High','Emergency'],cond:{q:w.id,op:'eq',v:'no'},name:'priority'}),
+   Q('date','Inspection date',{def:'today',name:'inspected_on'}),Q('photo','Photo',{max:2}),Q('signature','Inspector signature',{req:true})]}},
+ {key:'incident',name:'Incident report',geo:'point',intro:'Report an incident where it happened. Call emergency services first if anyone is in danger.',blurb:'What, when, how serious, injuries and a description.',
+  build(){const inj=Q('yesno','Was anyone injured?',{req:true,name:'injuries'});
+   return[Q('dropdown','Incident type',{opts:['Traffic','Fire','Flooding','Spill or leak','Fallen tree','Vandalism','Other'],req:true,name:'incident_type'}),
+   Q('date','Date',{def:'today',req:true}),Q('time','Time',{def:'now'}),Q('rating','Severity',{max:5,req:true,hint:'1 is minor, 5 is critical'}),
+   inj,Q('number','Number of people injured',{min:1,max:999,cond:{q:inj.id,op:'eq',v:'yes'},req:true,name:'injured_count'}),
+   Q('longtext','What happened?',{req:true,min:10,name:'description'}),Q('phone','Your phone number',{hint:'In case we need to call you back',name:'reporter_phone'}),Q('photo','Photos',{max:3})]}}
+];
+function newForm(tpl){
+  return {v:1,id:uid(8),title:tpl?tpl.name:'Untitled form',desc:tpl?tpl.intro:'',questions:tpl?tpl.build():[],
+    geo:{type:tpl?tpl.geo:'point',req:true,gps:true,tap:true,acc:15,base:'streets',switch:true,center:[20,10],zoom:2},
+    dest:{kind:'sheet',url:''},token:uid(16),readKey:uid(24),updated:Date.now()};
+}
+function colNames(form){const used={},out={};BASE_COLS.forEach(c=>used[c]=1);for(const q of form.questions){let b=slug(q.name||q.label),n=b,i=2;while(used[n])n=b+'_'+i++;used[n]=1;out[q.id]=n}return out}
+function linkPayload(F){return{v:1,id:F.id,title:F.title,desc:F.desc,questions:F.questions,geo:F.geo,dest:{kind:F.dest.kind,url:F.dest.kind==='none'?'':F.dest.url},token:F.token}}
+function encodeForm(p){const j=JSON.stringify(p);if(window.LZString)return LZString.compressToEncodedURIComponent(j);return 'j.'+btoa(unescape(encodeURIComponent(j))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function decodeForm(s){let j;if(s.startsWith('j.')){const b=s.slice(2).replace(/-/g,'+').replace(/_/g,'/');j=decodeURIComponent(escape(atob(b)))}else j=window.LZString&&LZString.decompressFromEncodedURIComponent(s);if(!j)throw new Error('bad link');const f=JSON.parse(j);if(!f||!Array.isArray(f.questions))throw new Error('bad form');return f}
+
+/* ================= geometry helpers ================= */
+const R_E=6371008.8,RAD=Math.PI/180;
+function hav(a,b){const dl=(b[0]-a[0])*RAD,dn=(b[1]-a[1])*RAD;const x=Math.sin(dl/2)**2+Math.cos(a[0]*RAD)*Math.cos(b[0]*RAD)*Math.sin(dn/2)**2;return 2*R_E*Math.asin(Math.sqrt(x))}
+const lineLen=v=>v.slice(1).reduce((s,p,i)=>s+hav(v[i],p),0);
+function polyArea(v){const lat0=v.reduce((s,p)=>s+p[0],0)/v.length;const P=v.map(([a,b])=>[b*RAD*R_E*Math.cos(lat0*RAD),a*RAD*R_E]);let s=0;for(let i=0;i<P.length;i++){const p=P[i],q=P[(i+1)%P.length];s+=p[0]*q[1]-q[0]*p[1]}return Math.abs(s)/2}
+const fmtLen=m=>m<1000?Math.round(m)+' m':(m/1000).toFixed(2)+' km';
+const fmtArea=a=>a<10000?Math.round(a)+' m²':(a/10000).toFixed(2)+' ha';
+function centroid(g){if(!g||!g.coordinates)return null;if(g.type==='Point')return g.coordinates;const pts=g.type==='Polygon'?g.coordinates[0].slice(0,-1):g.coordinates;if(!pts.length)return null;const n=pts.length;return[pts.reduce((s,p)=>s+p[0],0)/n,pts.reduce((s,p)=>s+p[1],0)/n]}
+function tiles(){return{
+  streets:L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}),
+  satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'})}}
+const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ================= records: export / import ================= */
+function toGeoJSON(recs,title){return{type:'FeatureCollection',name:title||'records',features:recs.map(r=>({type:'Feature',id:r.id,geometry:r.geometry||null,properties:Object.assign({_id:r.id,_collected_at:r.collected_at||'',_collector:r.collector||'',_accuracy_m:r.accuracy??null},r.fields||{})}))}}
+function toCSV(recs){
+  const keys=[];recs.forEach(r=>Object.keys(r.fields||{}).forEach(k=>{if(!keys.includes(k))keys.push(k)}));
+  const one=x=>typeof x==='string'&&x.startsWith('data:')?'[photo in GeoJSON file]':x;
+  const cell=v=>{if(v==null)return '';let s=Array.isArray(v)?v.map(one).join('; '):String(one(v));return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const head=BASE_COLS.filter(c=>c!=='submitted_at').concat(keys);
+  const lines=[head.join(',')];
+  recs.forEach(r=>{const c=centroid(r.geometry);lines.push([r.id,r.collected_at,r.collector,r.geometry?r.geometry.type:'',c?c[1]:'',c?c[0]:'',r.accuracy??'',r.geometry?JSON.stringify(r.geometry):'',...keys.map(k=>(r.fields||{})[k])].map(cell).join(','))});
+  return '﻿'+lines.join('\r\n');
+}
+function parseCSV(t){const rows=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}else if(c==='"')q=true;else if(c===','){row.push(f);f=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}else f+=c}if(f!==''||row.length){row.push(f);rows.push(row)}return rows.filter(r=>r.length>1||r[0]!=='')}
+function rowToRec(o){
+  let g=null;try{if(o.geometry)g=typeof o.geometry==='string'?JSON.parse(o.geometry):o.geometry}catch(e){}
+  if(!g&&hasNum(o.latitude)&&hasNum(o.longitude))g={type:'Point',coordinates:[+o.longitude,+o.latitude]};
+  const fields={};Object.keys(o).forEach(k=>{if(!BASE_COLS.includes(k))fields[k]=o[k]});
+  return{id:String(o.id||hashStr(JSON.stringify(o))),collected_at:String(o.collected_at||o.submitted_at||''),collector:String(o.collector||''),accuracy:hasNum(o.accuracy_m)?+o.accuracy_m:null,geometry:g,fields};
+}
+function parseImport(text){
+  text=text.replace(/^﻿/,'');const t=text.trim();
+  if(t.startsWith('{')||t.startsWith('[')){const j=JSON.parse(t);const feats=Array.isArray(j)?j:j.type==='FeatureCollection'?j.features:j.type==='Feature'?[j]:[];
+    return feats.map(f=>{const p=Object.assign({},f.properties||{});const r={id:String(p._id||f.id||hashStr(JSON.stringify(f))),collected_at:p._collected_at||'',collector:p._collector||'',accuracy:p._accuracy_m??null,geometry:f.geometry||null,fields:{}};['_id','_collected_at','_collector','_accuracy_m'].forEach(k=>delete p[k]);r.fields=p;return r})}
+  const rows=parseCSV(text);const head=rows.shift()||[];return rows.map(c=>{const o={};head.forEach((h,i)=>o[h.trim()]=c[i]??'');return rowToRec(o)});
+}
+function recSummary(r){const v=Object.values(r.fields||{}).filter(x=>(typeof x==='string'&&x&&!x.startsWith('data:')&&!x.startsWith('http'))||typeof x==='number').slice(0,2);return v.map(String).join(' · ')||'Record'}
+
+/* ================= image compression ================= */
+function compress(file,max,q){max=max||1600;q=q||.72;return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('That file could not be read as a photo.'))};img.src=u})}
+
+/* ================= form renderer (preview + collector) ================= */
+function defVal(q){const d=q.def;if(d===undefined||d===null||d==='')return undefined;switch(q.type){
+  case 'date':return d==='today'?today():d;case 'time':return d==='now'?nowTime():d;
+  case 'number':case 'scale':case 'rating':return hasNum(d)?Number(d):undefined;
+  case 'multi':return String(d).split(',').map(s=>s.trim()).filter(s=>(q.opts||[]).includes(s));
+  case 'photo':case 'signature':return undefined;default:return String(d)}}
+function testCond(a,c){const v=c.v??'';switch(c.op){
+  case 'set':return answered(a);
+  case 'ne':return answered(a)&&(Array.isArray(a)?!a.includes(v):String(a)!==String(v));
+  case 'has':return Array.isArray(a)?a.includes(v):String(a??'').toLowerCase().includes(String(v).toLowerCase());
+  default:return Array.isArray(a)?a.includes(v):String(a??'')===String(v)}}
+function checkQ(q,v){
+  if(!answered(v))return q.req?'This question needs an answer.':'';
+  const mn=q.min,mx=q.max;
+  switch(q.type){
+    case 'text':case 'longtext':if(hasNum(mn)&&v.length<+mn)return `Write at least ${mn} characters.`;if(hasNum(mx)&&v.length>+mx)return `Keep it to ${mx} characters or fewer.`;break;
+    case 'number':case 'scale':if(isNaN(v))return 'Enter a number.';if(hasNum(mn)&&v<+mn)return `Enter ${mn} or more.`;if(hasNum(mx)&&v>+mx)return `Enter ${mx} or less.`;break;
+    case 'email':if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return 'Enter an email address like name@example.com.';break;
+    case 'phone':if(!/^[+()\d\s.-]{5,}$/.test(v))return 'Enter a phone number using digits, spaces or +.';break;
+    case 'date':if(mn&&v<mn)return `Pick a date on or after ${mn}.`;if(mx&&v>mx)return `Pick a date on or before ${mx}.`;break;
+    case 'multi':if(hasNum(mn)&&v.length<+mn)return `Choose at least ${mn}.`;if(hasNum(mx)&&v.length>+mx)return `Choose no more than ${mx}.`;break;
+    case 'photo':if(hasNum(mn)&&v.length<+mn)return `Add at least ${mn} photo${mn>1?'s':''}.`;break;
+  }
+  return '';
+}
+function qHTML(q,P){
+  const id=P+'-'+q.id,d=defVal(q),t=q.type,o=q.opts||[];
+  const mm=(a,b)=>(q.min!==''&&q.min!=null?` ${a}="${esc(q.min)}"`:'')+(q.max!==''&&q.max!=null?` ${b}="${esc(q.max)}"`:'');
+  const inputLike=['text','longtext','number','email','phone','date','time','dropdown','scale'].includes(t);
+  let c='';
+  switch(t){
+    case 'text':c=`<input id="${id}" type="text" value="${esc(d??'')}"${hasNum(q.max)?` maxlength="${+q.max}"`:''}>`;break;
+    case 'longtext':c=`<textarea id="${id}" rows="4"${hasNum(q.max)?` maxlength="${+q.max}"`:''}>${esc(d??'')}</textarea>`;break;
+    case 'number':c=`<input id="${id}" type="number" inputmode="decimal" step="any" value="${esc(d??'')}"${mm('min','max')}>`;break;
+    case 'email':c=`<input id="${id}" type="email" inputmode="email" autocomplete="email" value="${esc(d??'')}">`;break;
+    case 'phone':c=`<input id="${id}" type="tel" inputmode="tel" autocomplete="tel" value="${esc(d??'')}">`;break;
+    case 'date':c=`<input id="${id}" type="date" value="${esc(d??'')}"${mm('min','max')}>`;break;
+    case 'time':c=`<input id="${id}" type="time" value="${esc(d??'')}">`;break;
+    case 'yesno':c=`<div class="seg" role="group" aria-labelledby="${id}-l">${['yes','no'].map(v=>`<button type="button" data-v="${v}" aria-pressed="${d===v}">${v==='yes'?'Yes':'No'}</button>`).join('')}</div>`;break;
+    case 'single':c=`<div class="opts" role="radiogroup" aria-labelledby="${id}-l">${o.map(x=>`<label class="opt"><input type="radio" name="${id}" value="${esc(x)}"${d===x?' checked':''}><span>${esc(x)}</span></label>`).join('')}</div>`;break;
+    case 'multi':c=`<div class="opts" role="group" aria-labelledby="${id}-l">${o.map(x=>`<label class="opt"><input type="checkbox" value="${esc(x)}"${(d||[]).includes(x)?' checked':''}><span>${esc(x)}</span></label>`).join('')}</div>`;break;
+    case 'dropdown':c=`<select id="${id}"><option value="">Choose…</option>${o.map(x=>`<option value="${esc(x)}"${d===x?' selected':''}>${esc(x)}</option>`).join('')}</select>`;break;
+    case 'rating':{const n=Math.min(10,Math.max(2,+q.max||5));c=`<div class="stars" role="group" aria-labelledby="${id}-l">${Array.from({length:n},(_,i)=>`<button type="button" data-star="${i+1}" aria-label="${i+1} of ${n}">★</button>`).join('')}</div>`;break}
+    case 'scale':{const mn=hasNum(q.min)?+q.min:0,mx=hasNum(q.max)?+q.max:10;const st=mx-mn>50?1:mx-mn<=1?0.1:1;c=`<div class="scale"><output>${d??'–'}</output><span class="mono">${mn}</span><input id="${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${d??Math.round((mn+mx)/2)}"><span class="mono">${mx}</span></div>`;break}
+    case 'photo':{const mx=+q.max||1;c=`<div class="thumbs"></div><label class="btn photo-add"><input type="file" accept="image/*"${mx>1?' multiple':''} aria-labelledby="${id}-l">Take or choose ${mx>1?'photos':'a photo'}</label>${mx>1?`<p class="micro">Up to ${mx} photos.</p>`:''}`;break}
+    case 'signature':c=`<div class="sig"><canvas width="640" height="220" aria-label="Signature pad. Draw with your finger."></canvas><button type="button" class="btn ghost small" data-clear>Clear signature</button></div>`;break;
+  }
+  const lab=inputLike?`<label class="cf-label" id="${id}-l" for="${id}">`:`<div class="cf-label" id="${id}-l">`;
+  return `<div class="cf-q" data-q="${q.id}">${lab}${esc(q.label||'Untitled question')}${q.req?'<span class="req" aria-hidden="true">*</span>':''}${inputLike?'</label>':'</div>'}${q.hint?`<p class="cf-hint">${esc(q.hint)}</p>`:''}${c}<p class="cf-err" hidden></p></div>`;
+}
+function geoHTML(form){
+  const g=form.geo,both=g.gps!==false&&g.tap!==false;
+  const how=[g.gps!==false?'use GPS':'',g.tap!==false?'tap the map':''].filter(Boolean).join(' or ');
+  const kind={point:'Point',line:'Line',polygon:'Area'}[g.type];
+  const hint=g.type==='point'?`Mark one spot: ${how}.`:g.type==='line'?`Add points along the route: ${how}. At least 2 points.`:`Add each corner of the area: ${how}. At least 3 corners.`;
+  return `<div class="cf-q cf-geo"><div class="cf-label">Location · ${kind}${g.req!==false?'<span class="req" aria-hidden="true">*</span>':''}</div><p class="cf-hint">${hint}</p>
+  <div class="geo-map"></div>
+  <div class="geo-bar">
+    ${g.gps!==false?`<button type="button" class="btn small primary" data-g="gps">${g.type==='point'?'Use GPS':'Add GPS point'}</button>`:''}
+    ${both?`<button type="button" class="btn small" data-g="tap" aria-pressed="true">Tap map</button>`:''}
+    ${g.type!=='point'?`<button type="button" class="btn small ghost" data-g="undo">Undo</button>`:''}
+    <button type="button" class="btn small ghost" data-g="clear">Clear</button>
+    ${g.switch!==false?`<button type="button" class="btn small ghost" data-g="base">${g.base==='satellite'?'Streets':'Satellite'}</button>`:''}
+  </div>
+  <div class="gps-panel" hidden><span class="gps-read mono">Waiting for GPS…</span><button type="button" class="btn small primary" data-g="cap" disabled>Capture</button><button type="button" class="btn small ghost" data-g="stop">Stop GPS</button></div>
+  <p class="geo-sum mono">No location yet</p><p class="cf-err" hidden></p></div>`;
+}
+function geoWidget(sec,form){
+  const g=form.geo,kind=g.type;let verts=[],accs=[],fix=null,watch=null,tapOn=g.tap!==false,baseName=g.base==='satellite'?'satellite':'streets';
+  const mapEl=$('.geo-map',sec),sum=$('.geo-sum',sec),panel=$('.gps-panel',sec),read=$('.gps-read',sec),cap=$('[data-g=cap]',sec),err=$('.cf-err',sec);
+  let map=null,layers=null,bases={},me=null,meAcc=null;
+  if(window.L){try{map=L.map(mapEl,{zoomControl:true}).setView(g.center||[20,10],g.zoom||2);bases=tiles();bases[baseName].addTo(map);layers=L.layerGroup().addTo(map);map.on('click',e=>{if(tapOn)add([e.latlng.lat,e.latlng.lng],null)})}catch(e){map=null}}
+  if(!map)mapEl.innerHTML='<p class="map-off">The map could not load. GPS capture still works.</p>';
+  mapEl.classList.toggle('tapping',tapOn);
+  sec.addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;e.preventDefault();const a=b.dataset.g;
+    if(a==='gps')startGps();else if(a==='stop')stopGps();
+    else if(a==='cap'){if(fix){add([fix.lat,fix.lng],Math.round(fix.acc));if(kind==='point')stopGps()}}
+    else if(a==='tap'){tapOn=!tapOn;b.setAttribute('aria-pressed',tapOn);mapEl.classList.toggle('tapping',tapOn)}
+    else if(a==='undo'){verts.pop();accs.pop();draw()}
+    else if(a==='clear'){verts=[];accs=[];draw()}
+    else if(a==='base'&&map){map.removeLayer(bases[baseName]);baseName=baseName==='streets'?'satellite':'streets';bases[baseName].addTo(map);b.textContent=baseName==='streets'?'Satellite':'Streets'}});
+  function add(ll,acc){if(kind==='point'){verts=[ll];accs=[acc]}else{verts.push(ll);accs.push(acc)}draw();showErr('')}
+  function draw(){
+    if(map){layers.clearLayers();const col=cssVar('--teal')||'#0C665D',ring=cssVar('--surface')||'#fff';
+      if(kind==='line'&&verts.length>1)L.polyline(verts,{color:col,weight:4}).addTo(layers);
+      if(kind==='polygon'&&verts.length>2)L.polygon(verts,{color:col,weight:3,fillOpacity:.22}).addTo(layers);
+      else if(kind==='polygon'&&verts.length===2)L.polyline(verts,{color:col,weight:3,dashArray:'6 6'}).addTo(layers);
+      verts.forEach(v=>L.circleMarker(v,{radius:kind==='point'?9:5,color:ring,weight:2,fillColor:col,fillOpacity:1}).addTo(layers));
+      if(kind==='point'&&verts.length){if(accs[0])L.circle(verts[0],{radius:accs[0],color:col,weight:1,fillOpacity:.08}).addTo(layers);map.setView(verts[0],Math.max(map.getZoom(),17))}}
+    sum.textContent=summary();
+  }
+  function summary(){if(!verts.length)return 'No location yet';
+    if(kind==='point'){const[a,b]=verts[0];return `${a.toFixed(6)}, ${b.toFixed(6)} · ${accs[0]!=null?'GPS ±'+accs[0]+' m':'placed on map'}`}
+    const n=verts.length;if(kind==='line')return `${n} point${n>1?'s':''}${n>1?' · '+fmtLen(lineLen(verts)):''}`;
+    return `${n} corner${n>1?'s':''}${n>2?' · '+fmtArea(polyArea(verts))+' · perimeter '+fmtLen(lineLen(verts.concat([verts[0]]))):''}`}
+  function startGps(){if(!navigator.geolocation){showErr('This browser cannot use GPS. Tap the map instead.');return}
+    panel.hidden=false;if(watch!=null)return;read.textContent='Waiting for GPS…';read.className='gps-read mono';cap.disabled=true;
+    try{watch=navigator.geolocation.watchPosition(onFix,onFail,{enableHighAccuracy:true,maximumAge:0,timeout:60000})}catch(e){onFail({code:1})}}
+  function onFix(p){fix={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};const a=Math.round(fix.acc),t=+g.acc||15,good=a<=t;
+    read.textContent=`±${a} m now · target ±${t} m${good?'':' · wait or move to open sky'}`;read.className='gps-read mono '+(good?'good':a<=t*2?'fair':'poor');
+    cap.disabled=false;cap.textContent=kind==='point'?(good?'Capture point':`Capture anyway (±${a} m)`):(good?'Add this point':`Add anyway (±${a} m)`);
+    if(map){const ll=[fix.lat,fix.lng];if(!me){me=L.circleMarker(ll,{radius:7,color:'#fff',weight:2,fillColor:'#2F7DF6',fillOpacity:1}).addTo(map);meAcc=L.circle(ll,{radius:fix.acc,color:'#2F7DF6',weight:1,fillOpacity:.1}).addTo(map);map.setView(ll,17)}else{me.setLatLng(ll);meAcc.setLatLng(ll).setRadius(fix.acc)}}}
+  function onFail(e){const m=e.code===1?'Location is blocked for this page. Allow location for this site in your browser settings, or tap the map.':e.code===3?'GPS is slow to respond. Move to open sky, or tap the map.':'GPS is not available right now. Tap the map instead.';
+    read.textContent=m;read.className='gps-read poor';cap.disabled=true;if(e.code===1&&watch!=null){navigator.geolocation.clearWatch(watch);watch=null}}
+  function stopGps(){if(watch!=null){navigator.geolocation.clearWatch(watch);watch=null}panel.hidden=true;if(me&&map){map.removeLayer(me);map.removeLayer(meAcc);me=null}fix=null}
+  function showErr(m){err.textContent=m||'';err.hidden=!m;sec.classList.toggle('bad',!!m)}
+  return{el:sec,map,showErr,
+    check(){if(g.req===false&&!verts.length)return '';const need=kind==='point'?1:kind==='line'?2:3;if(verts.length<need)return kind==='point'?'Mark the location with GPS or by tapping the map.':`Add at least ${need} points. You have ${verts.length}.`;return ''},
+    value(){if(!verts.length)return null;const c=verts.map(([a,b])=>[+b.toFixed(7),+a.toFixed(7)]);if(kind==='point')return{type:'Point',coordinates:c[0]};if(kind==='line')return{type:'LineString',coordinates:c};return{type:'Polygon',coordinates:[c.concat([c[0]])]}},
+    accuracy(){const a=accs.filter(x=>x!=null);return a.length?Math.max(...a):null},
+    reset(){verts=[];accs=[];stopGps();draw();showErr('')},
+    destroy(){stopGps();if(map)map.remove()}};
+}
+function renderForm(root,form,opt){
+  opt=opt||{};const P=opt.preview?'pv':'cf';const qs=form.questions||[];const byId=Object.fromEntries(qs.map(q=>[q.id,q]));const names=colNames(form);
+  const ans={};const init=()=>{Object.keys(ans).forEach(k=>delete ans[k]);qs.forEach(q=>{const d=defVal(q);if(d!==undefined)ans[q.id]=Array.isArray(d)?d.slice():d})};init();
+  const hasGeo=form.geo&&form.geo.type&&form.geo.type!=='none';
+  root.innerHTML=`<form class="cf" novalidate><div class="cf-head"><h2 class="cf-title">${esc(form.title||'Untitled form')}</h2>${form.desc?`<p class="cf-desc">${esc(form.desc)}</p>`:''}</div>
+    ${hasGeo?geoHTML(form):''}${qs.map(q=>qHTML(q,P)).join('')}
+    ${qs.length||hasGeo?'':'<p class="cf-empty">Questions you add appear here.</p>'}
+    <button type="submit" class="btn primary big">Save record</button></form>`;
+  const formEl=$('form',root);const geo=hasGeo?geoWidget($('.cf-geo',root),form):null;
+  const block=id=>root.querySelector(`.cf-q[data-q="${id}"]`);
+  function visible(q,d){if(!q.cond||!q.cond.q)return true;const p=byId[q.cond.q];if(!p||(d||0)>20)return true;return visible(p,(d||0)+1)&&testCond(ans[p.id],q.cond)}
+  function refresh(){qs.forEach(q=>{const b=block(q.id);if(b)b.hidden=!visible(q)})}
+  function setErr(id,m){const b=block(id);if(!b)return;const e=$('.cf-err',b);e.textContent=m||'';e.hidden=!m;b.classList.toggle('bad',!!m)}
+  function paintStars(q){const b=block(q.id);$$('[data-star]',b).forEach(s=>s.classList.toggle('on',+s.dataset.star<=(+ans[q.id]||0)))}
+  function paintThumbs(q){const b=block(q.id),arr=ans[q.id]||[];$('.thumbs',b).innerHTML=arr.map((s,i)=>`<figure><img src="${s}" alt="Photo ${i+1}"><button type="button" data-rm="${i}" aria-label="Remove photo ${i+1}">×</button></figure>`).join('');$('.photo-add',b).hidden=arr.length>=(+q.max||1)}
+  const pads={};
+  qs.filter(q=>q.type==='signature').forEach(q=>{const cv=$('canvas',block(q.id)),cx=cv.getContext('2d');let drawing=false,last=null,inked=false;
+    const pt=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
+    cv.addEventListener('pointerdown',e=>{drawing=true;last=pt(e);cv.setPointerCapture(e.pointerId);e.preventDefault()});
+    cv.addEventListener('pointermove',e=>{if(!drawing)return;const p=pt(e);cx.strokeStyle='#111';cx.lineWidth=3;cx.lineCap='round';cx.lineJoin='round';cx.beginPath();cx.moveTo(last[0],last[1]);cx.lineTo(p[0],p[1]);cx.stroke();last=p;inked=true});
+    const end=()=>{if(!drawing)return;drawing=false;if(inked){const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(cv,0,0);ans[q.id]=c.toDataURL('image/png');setErr(q.id,'');refresh()}};
+    cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+    pads[q.id]=()=>{cx.clearRect(0,0,cv.width,cv.height);inked=false;delete ans[q.id]}});
+  function onIn(e){const t=e.target,b=t.closest('.cf-q[data-q]');if(!b)return;const q=byId[b.dataset.q];if(!q)return;
+    if(q.type==='photo'){if(e.type==='change'&&t.type==='file')addPhotos(q,t);return}
+    if(q.type==='multi')ans[q.id]=$$('input[type=checkbox]:checked',b).map(x=>x.value);
+    else if(q.type==='single'){const c=$('input[type=radio]:checked',b);ans[q.id]=c?c.value:''}
+    else if(q.type==='number')ans[q.id]=t.value===''?'':Number(t.value);
+    else if(q.type==='scale'){ans[q.id]=Number(t.value);$('output',b).textContent=t.value}
+    else if(t.matches('input,textarea,select'))ans[q.id]=t.value;
+    setErr(q.id,'');refresh()}
+  formEl.addEventListener('input',onIn);formEl.addEventListener('change',onIn);
+  formEl.addEventListener('click',e=>{const t=e.target.closest('button[data-v],button[data-star],button[data-rm],button[data-clear]');if(!t)return;const b=t.closest('.cf-q[data-q]');if(!b)return;const q=byId[b.dataset.q];e.preventDefault();
+    if(t.dataset.v!==undefined){ans[q.id]=ans[q.id]===t.dataset.v?'':t.dataset.v;$$('button[data-v]',b).forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===ans[q.id]))}
+    else if(t.dataset.star){const n=+t.dataset.star;ans[q.id]=ans[q.id]===n?'':n;paintStars(q)}
+    else if(t.dataset.rm!==undefined){(ans[q.id]||[]).splice(+t.dataset.rm,1);paintThumbs(q)}
+    else if(t.dataset.clear!==undefined&&pads[q.id])pads[q.id]();
+    setErr(q.id,'');refresh()});
+  async function addPhotos(q,input){const max=+q.max||1,cur=ans[q.id]||(ans[q.id]=[]),files=[...input.files];input.value='';setErr(q.id,'');
+    for(const f of files){if(cur.length>=max){setErr(q.id,`You can add up to ${max} photo${max>1?'s':''}.`);break}try{cur.push(await compress(f))}catch(err){setErr(q.id,err.message)}}paintThumbs(q);refresh()}
+  function paintAll(){qs.forEach(q=>{if(q.type==='rating')paintStars(q);if(q.type==='photo')paintThumbs(q);if(q.type==='yesno')$$('button[data-v]',block(q.id)).forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===ans[q.id]));if(q.type==='scale'){const b=block(q.id);$('output',b).textContent=answered(ans[q.id])?ans[q.id]:'–'}if(q.type==='signature'&&pads[q.id])pads[q.id]();setErr(q.id,'')})}
+  formEl.addEventListener('submit',async e=>{e.preventDefault();let first=null;
+    if(geo){const m=geo.check();geo.showErr(m);if(m)first=geo.el}
+    qs.forEach(q=>{const b=block(q.id);if(!b||b.hidden){setErr(q.id,'');return}const m=checkQ(q,ans[q.id]);setErr(q.id,m);if(m&&!first)first=b});
+    if(first){first.scrollIntoView({behavior:'smooth',block:'center'});toast('Some answers need attention. They are marked in red.','bad');return}
+    const fields={},photoKeys=[];
+    qs.forEach(q=>{const b=block(q.id);if(b.hidden||!answered(ans[q.id]))return;const n=names[q.id];fields[n]=Array.isArray(ans[q.id])?ans[q.id].slice():ans[q.id];if(q.type==='photo'||q.type==='signature')photoKeys.push(n)});
+    const rec={id:'r'+Date.now().toString(36)+uid(6),form:form.id,collected_at:new Date().toISOString(),collector:(opt.collector&&opt.collector())||'',geometry:geo?geo.value():null,accuracy:geo?geo.accuracy():null,fields,photoKeys};
+    try{if(opt.onSubmit)await opt.onSubmit(rec);reset()}catch(err){toast(err.message||'Could not save the record.','bad')}});
+  function reset(){init();formEl.reset();paintAll();if(geo)geo.reset();refresh();if(opt.preview)root.scrollTop=0;else window.scrollTo({top:0,behavior:'smooth'})}
+  paintAll();refresh();
+  return{destroy(){if(geo)geo.destroy()},invalidate(){if(geo&&geo.map)geo.map.invalidateSize()}};
+}
+
+/* ================= phone storage ================= */
+const DB={_p:null,mem:new Map(),
+  open(){return this._p||(this._p=new Promise((res,rej)=>{try{const r=indexedDB.open('gv-collector',1);r.onupgradeneeded=()=>r.result.createObjectStore('records',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}}))},
+  async tx(mode,fn){let db;try{db=await this.open()}catch(e){return null}return new Promise((res,rej)=>{const t=db.transaction('records',mode),q=fn(t.objectStore('records'));t.oncomplete=()=>res(q.result);t.onerror=()=>rej(t.error)})},
+  async put(r){const x=await this.tx('readwrite',s=>s.put(r));if(x===null)this.mem.set(r.id,r)},
+  async all(){const x=await this.tx('readonly',s=>s.getAll());return x===null?[...this.mem.values()]:x}};
+
+/* ================= COLLECTOR ================= */
+function startCollector(form){
+  store.set('gvc.lastForm',form);document.title=form.title+' · GeoVision';document.body.classList.add('is-collector');
+  const d=form.dest||{},dest=d.kind&&d.kind!=='none'&&d.url;
+  const root=$('#collector');root.hidden=false;
+  root.innerHTML=`<header class="c-top"><div class="c-top-in gut"><div class="brand sm"><span class="brand-mark" aria-hidden="true"></span><b>GeoVision</b><span>Collector</span></div><button type="button" class="pill" id="syncPill" aria-haspopup="dialog"><span class="dot"></span>Ready</button></div></header>
+  <main class="c-main gut">
+    <div class="c-who"><label for="who">Your name</label><input id="who" type="text" autocomplete="name" placeholder="Saved on this phone, sent with each record"></div>
+    <div id="cForm"></div>
+    <p class="c-foot">Each record is saved on this phone first${dest?', then sent automatically. No signal? Keep going; saved records send when you are back online.':'. Export your records from the status button at the top and send the file to your coordinator.'}</p>
+  </main>
+  <div class="sheet" id="recSheet" hidden role="dialog" aria-modal="true" aria-labelledby="recTitle"><div class="sheet-card">
+    <div class="sheet-head"><h2 id="recTitle">My records</h2><button type="button" class="btn ghost small" data-x>Close</button></div>
+    <div class="stats" id="recStats"></div>
+    <p class="status-line" id="syncErr" hidden></p>
+    <div class="row">${dest?'<button type="button" class="btn primary" id="sendNow">Send now</button>':''}<button type="button" class="btn" id="expGeo">Export GeoJSON</button><button type="button" class="btn" id="expCsv">Export CSV</button></div>
+    <p class="micro">No internet? Export a file and send it to your coordinator by message or email. GeoJSON keeps your photos; CSV is smaller and opens in Excel.</p>
+    <ol class="rec-list" id="recList"></ol>
+    <div class="note" id="installBox"></div>
+  </div></div>`;
+  const who=$('#who');who.value=store.get('gvc.who','');who.addEventListener('input',()=>store.set('gvc.who',who.value.trim()));
+  const pill=$('#syncPill'),sheet=$('#recSheet');let syncing=false,lastErr='';
+  renderForm($('#cForm'),form,{collector:()=>who.value.trim(),onSubmit:async rec=>{await DB.put(Object.assign(rec,{_status:dest?'pending':'local',_form:form.id}));
+    toast(dest?(navigator.onLine?'Saved. Sending now.':'Saved on this phone. It will send when you are back online.'):'Saved on this phone.','ok');refresh();sync()}});
+  const mine=async()=>(await DB.all()).filter(r=>r._form===form.id).sort((a,b)=>b.collected_at.localeCompare(a.collected_at));
+  const clean=r=>{const o={};for(const k in r)if(k[0]!=='_')o[k]=r[k];return o};
+  async function send(r){const body=JSON.stringify({token:form.token,form:{id:form.id,title:form.title},record:clean(r)});
+    if(d.kind==='sheet'){const res=await fetch(d.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body,redirect:'follow'});let j;try{j=await res.json()}catch(e){throw new Error('The sheet sent back an unexpected reply. Ask your coordinator to check that the script is deployed for "Anyone".')}if(!j.ok)throw new Error(j.error||'The sheet did not accept the record.')}
+    else{const res=await fetch(d.url,{method:'POST',headers:{'Content-Type':'application/json'},body});if(!res.ok)throw new Error('The server replied with error '+res.status+'.')}}
+  async function sync(){if(syncing||!dest||!navigator.onLine)return refresh();syncing=true;refresh();
+    try{const pend=(await mine()).filter(r=>r._status==='pending').reverse();for(const r of pend){try{await send(r);r._status='sent';r._sentAt=new Date().toISOString();await DB.put(r);lastErr=''}catch(e){lastErr=e.message==='Failed to fetch'?'Could not reach the destination. Will try again shortly.':e.message;break}}}
+    finally{syncing=false;refresh()}}
+  async function refresh(){const all=await mine(),pend=all.filter(r=>r._status==='pending').length,sent=all.filter(r=>r._status==='sent').length;let t,c;
+    if(!dest){t=`${all.length} saved on phone`;c='ok'}else if(!navigator.onLine){t=pend?`Offline · ${pend} waiting`:'Offline';c='off'}else if(syncing){t=`Sending ${pend}…`;c='busy'}else if(pend){t=`${pend} waiting${lastErr?' · retrying':''}`;c=lastErr?'bad':'warn'}else{t=all.length?`All ${sent} sent`:'Ready';c='ok'}
+    pill.className='pill '+c;pill.innerHTML=`<span class="dot"></span>${esc(t)}`;
+    if(!sheet.hidden){$('#recStats').innerHTML=`<div class="stat"><b>${all.length}</b><span>Saved</span></div><div class="stat"><b>${dest?sent:'–'}</b><span>Sent</span></div><div class="stat"><b>${dest?pend:all.length}</b><span>${dest?'Waiting':'On phone'}</span></div>`;
+      const se=$('#syncErr');se.textContent=lastErr;se.hidden=!lastErr;se.className='status-line bad';
+      $('#recList').innerHTML=all.length?all.map(r=>`<li class="rec"><b>${esc(recSummary(r))}</b><span class="tag ${r._status}">${r._status==='sent'?'Sent':r._status==='pending'?'Waiting':'On phone'}</span><small>${new Date(r.collected_at).toLocaleString()} · ${r.geometry?r.geometry.type:'no location'}</small></li>`).join(''):'<li class="micro">No records yet. Fill in the form and tap Save record.</li>'}}
+  pill.addEventListener('click',()=>{sheet.hidden=false;refresh();installTip()});
+  sheet.addEventListener('click',e=>{if(e.target===sheet||e.target.closest('[data-x]'))sheet.hidden=true});
+  const fname=ext=>`${slug(form.title)}_${slug(who.value||'collector')}_${today()}.${ext}`;
+  async function exp(kind){const all=await mine();if(!all.length){toast('There are no records to export yet.');return}
+    const recs=all.map(clean),txt=kind==='geojson'?JSON.stringify(toGeoJSON(recs,form.title)):toCSV(recs),mime=kind==='geojson'?'application/geo+json':'text/csv',name=fname(kind);
+    try{const file=new File([txt],name,{type:mime});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:form.title});return}}catch(e){if(e.name==='AbortError')return}
+    download(name,txt,mime);toast('File saved to your downloads. Send it to your coordinator.','ok')}
+  root.addEventListener('click',e=>{const id=e.target.id;if(id==='expGeo')exp('geojson');else if(id==='expCsv')exp('csv');else if(id==='sendNow'){lastErr='';sync()}});
+  let deferred=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;installTip()});
+  function installTip(){const box=$('#installBox');const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+    if(standalone){box.innerHTML='Installed on this phone. Open it from your home screen, even without internet.';return}
+    if(deferred){box.innerHTML='Add this form to your home screen so it opens like an app and works offline. <button type="button" class="btn small primary" id="instBtn">Add to home screen</button>';$('#instBtn').onclick=async()=>{deferred.prompt();deferred=null;installTip()};return}
+    box.innerHTML=/iPhone|iPad|iPod/.test(navigator.userAgent)?'To add this form to your home screen: tap the Share button in Safari, then <b>Add to Home Screen</b>.':'To add this form to your home screen: open your browser menu and choose <b>Add to Home screen</b> or <b>Install app</b>.'}
+  window.addEventListener('online',sync);window.addEventListener('offline',refresh);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});setInterval(sync,30000);
+  sync();
+}
+
+/* ================= DESIGNER ================= */
+function startDesigner(){
+  $('#designer').hidden=false;
+  let forms=store.get('gvc.forms',null);
+  if(!forms||!Object.keys(forms).length){const f=newForm(TEMPLATES[1]);forms={[f.id]:f};store.set('gvc.forms',forms);store.set('gvc.current',f.id)}
+  let F=forms[store.get('gvc.current')]||Object.values(forms)[0];let selQ=F.questions[0]?F.questions[0].id:null;let tab='design';
+  let preview=null,pvTimer=null,locMap=null,liveMap=null,liveLayer=null,liveTimer=null;const LIVE={};
+  const live=()=>LIVE[F.id]||(LIVE[F.id]={recs:new Map(),last:1,first:true,fitted:false});
+  function persist(){F.updated=Date.now();forms[F.id]=F;if(!store.set('gvc.forms',forms))toast('This browser would not save your changes. Check that storage is allowed.','bad');store.set('gvc.current',F.id)}
+  function changed(){persist();clearTimeout(pvTimer);pvTimer=setTimeout(renderPreview,250);$('#qCount').textContent=F.questions.length;renderFormSel()}
+  const qById=id=>F.questions.find(q=>q.id===id);
+
+  /* header */
+  function renderFormSel(){const s=$('#formSel');s.innerHTML=Object.values(forms).sort((a,b)=>b.updated-a.updated).map(f=>`<option value="${f.id}"${f.id===F.id?' selected':''}>${esc(f.title||'Untitled form')} · ${f.questions.length} q</option>`).join('')}
+  $('#formSel').addEventListener('change',e=>switchForm(e.target.value));
+  function switchForm(id){if(!forms[id])return;stopLive();F=forms[id];selQ=F.questions[0]?F.questions[0].id:null;store.set('gvc.current',F.id);renderAll()}
+  $('#newBtn').addEventListener('click',()=>openTpl());
+  $('#dupBtn').addEventListener('click',()=>{const c=JSON.parse(JSON.stringify(F));c.id=uid(8);c.title=F.title+' (copy)';c.token=uid(16);c.readKey=uid(24);c.dest={kind:F.dest.kind,url:''};forms[c.id]=c;switchForm(c.id);persist();toast('Copy created. It needs its own destination, so set that up before sharing.')});
+  const delBtn=$('#delBtn');let delArm=0;
+  delBtn.addEventListener('click',()=>{if(Date.now()-delArm>3000){delArm=Date.now();delBtn.textContent='Tap again to delete';setTimeout(()=>delBtn.textContent='Delete',3000);return}
+    delete forms[F.id];if(!Object.keys(forms).length){const f=newForm(null);forms[f.id]=f}store.set('gvc.forms',forms);delBtn.textContent='Delete';switchForm(Object.values(forms)[0].id);toast('Form deleted from this browser.')});
+
+  /* templates */
+  function openTpl(){const m=$('#tplModal');$('#tplGrid').innerHTML=TEMPLATES.map((t,i)=>`<button type="button" class="tpl" data-tpl="${i}"><span class="eyebrow">${{point:'Point',line:'Line',polygon:'Area'}[t.geo]} · ${t.build().length} questions</span><b>${esc(t.name)}</b><span>${esc(t.blurb)}</span></button>`).join('')+`<button type="button" class="tpl" data-tpl="blank"><span class="eyebrow">Point · empty</span><b>Blank form</b><span>Start from nothing and add your own questions.</span></button>`;m.hidden=false;$('.tpl',m).focus()}
+  $('#tplModal').addEventListener('click',e=>{const m=$('#tplModal');if(e.target===m||e.target.closest('[data-close]')){m.hidden=true;return}const b=e.target.closest('[data-tpl]');if(!b)return;const t=b.dataset.tpl==='blank'?null:TEMPLATES[+b.dataset.tpl];const f=newForm(t);forms[f.id]=f;m.hidden=true;switchForm(f.id);persist();setTab('design');toast(`Created “${f.title}”.`,'ok')});
+  document.addEventListener('click',e=>{if(e.target.closest('[data-open-tpl]'))openTpl()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#tplModal').hidden=true}});
+
+  /* tabs */
+  const TABS=['design','location','share','destination','live'];
+  function setTab(t,noHash){if(!TABS.includes(t))t='design';tab=t;$$('.tabs [data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));TABS.forEach(x=>$('#tab-'+x).hidden=x!==t);
+    if(!noHash&&!EMBED){try{history.replaceState(null,'','#'+t)}catch(e){}}else if(!noHash){try{location.hash=t}catch(e){}}
+    if(t==='design'&&preview)setTimeout(()=>preview.invalidate(),30);if(t==='location')renderLocation();if(t==='share')renderShare();if(t==='destination')renderDest();if(t==='live')renderLive()}
+  $$('.tabs [data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+  window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(h.startsWith('f=')){location.reload();return}if(TABS.includes(h)&&h!==tab)setTab(h,true)});
+
+  /* ---- design tab ---- */
+  $('#palList').innerHTML=Object.entries(TYPES).map(([k,t])=>`<button type="button" class="pal-btn" data-add="${k}"><span class="chip">${t.ic}</span>${t.n}</button>`).join('');
+  $('#palList').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b)return;const q=newQ(b.dataset.add);const i=F.questions.findIndex(x=>x.id===selQ);F.questions.splice(i<0?F.questions.length:i+1,0,q);selQ=q.id;changed();renderList();const li=$(`.qi[data-id="${q.id}"]`);if(li){li.scrollIntoView({behavior:'smooth',block:'nearest'});const inp=$('[data-k=label]',li);if(inp){inp.focus();inp.select()}}});
+  $('#fTitle').addEventListener('input',e=>{F.title=e.target.value;changed()});
+  $('#fDesc').addEventListener('input',e=>{F.desc=e.target.value;changed()});
+  function renderDesign(){$('#fTitle').value=F.title;$('#fDesc').value=F.desc||'';$('#qCount').textContent=F.questions.length;renderList();renderPreview()}
+  function condParents(q){const idx=F.questions.indexOf(q);return F.questions.slice(0,idx).filter(p=>!['photo','signature'].includes(p.type))}
+  function editorHTML(q){const T=TYPES[q.type],names=colNames(F),o=q.opts||[];let x='';
+    x+=`<label class="f">Question<input type="text" data-k="label" value="${esc(q.label)}"></label>`;
+    x+=`<label class="f">Hint <span class="micro">(optional, shown under the question)</span><input type="text" data-k="hint" value="${esc(q.hint||'')}"></label>`;
+    x+=`<div class="grid2"><label class="f">Column name in the sheet<input type="text" data-k="name" value="${esc(q.name||'')}" placeholder="${esc(names[q.id])}"></label><label class="chk"><input type="checkbox" data-k="req"${q.req?' checked':''}> Required</label></div>`;
+    if(T.opts)x+=`<label class="f">Choices, one per line<textarea data-k="opts" rows="${Math.min(8,Math.max(3,o.length))}">${esc(o.join('\n'))}</textarea></label>`;
+    let def='';
+    if(q.type==='single'||q.type==='dropdown')def=`<select data-k="def"><option value="">No default</option>${o.map(v=>`<option${q.def===v?' selected':''}>${esc(v)}</option>`).join('')}</select>`;
+    else if(q.type==='multi')def=`<input type="text" data-k="def" value="${esc(q.def||'')}" placeholder="Comma-separated choices">`;
+    else if(q.type==='yesno')def=`<select data-k="def"><option value="">No default</option><option value="yes"${q.def==='yes'?' selected':''}>Yes</option><option value="no"${q.def==='no'?' selected':''}>No</option></select>`;
+    else if(q.type==='date')def=`<select data-k="def"><option value="">No default</option><option value="today"${q.def==='today'?' selected':''}>Today's date</option></select>`;
+    else if(q.type==='time')def=`<select data-k="def"><option value="">No default</option><option value="now"${q.def==='now'?' selected':''}>Time the form opens</option></select>`;
+    else if(['number','scale','rating'].includes(q.type))def=`<input type="number" step="any" data-k="def" value="${esc(q.def??'')}">`;
+    else if(!['photo','signature'].includes(q.type))def=`<input type="text" data-k="def" value="${esc(q.def||'')}">`;
+    let lim='';
+    if(q.type==='rating')lim=`<label class="f">Number of stars<input type="number" min="2" max="10" data-k="max" value="${esc(q.max??5)}"></label>`;
+    else if(q.type==='photo')lim=`<label class="f">Minimum photos<input type="number" min="0" max="10" data-k="min" value="${esc(q.min??'')}"></label><label class="f">Maximum photos<input type="number" min="1" max="10" data-k="max" value="${esc(q.max??1)}"></label>`;
+    else if(T.lim){const ty=q.type==='date'?'date':'number';lim=`<label class="f">Minimum ${T.lim.toLowerCase()}<input type="${ty}" step="any" data-k="min" value="${esc(q.min??'')}"></label><label class="f">Maximum ${T.lim.toLowerCase()}<input type="${ty}" step="any" data-k="max" value="${esc(q.max??'')}"></label>`}
+    if(def||lim)x+=`<div class="grid2">${def?`<label class="f">Default value${def}</label>`:''}${lim}</div>`;
+    const ps=condParents(q),c=q.cond;
+    x+=`<fieldset class="cond"><legend>Show only when</legend>`;
+    if(!ps.length&&!c)x+=`<p class="micro">Add a question above this one to make this one depend on its answer.</p>`;
+    else{x+=`<select data-k="cond.q" aria-label="Depends on question"><option value="">Always show this question</option>${ps.map(p=>`<option value="${p.id}"${c&&c.q===p.id?' selected':''}>${esc(p.label)}</option>`).join('')}</select>`;
+      if(c&&qById(c.q)){const p=qById(c.q),ops=[['eq','is'],['ne','is not'],['has',p.type==='multi'?'includes':'contains'],['set','has any answer']];
+        x+=`<div class="grid2"><select data-k="cond.op" aria-label="Condition">${ops.map(([v,l])=>`<option value="${v}"${c.op===v?' selected':''}>${l}</option>`).join('')}</select>`;
+        if(c.op!=='set'){const vals=p.type==='yesno'?[['yes','Yes'],['no','No']]:TYPES[p.type].opts?(p.opts||[]).map(v=>[v,v]):null;
+          x+=vals?`<select data-k="cond.v" aria-label="Answer"><option value="">Choose an answer…</option>${vals.map(([v,l])=>`<option value="${esc(v)}"${c.v===v?' selected':''}>${esc(l)}</option>`).join('')}</select>`:`<input type="text" data-k="cond.v" value="${esc(c.v||'')}" placeholder="Answer" aria-label="Answer">`}
+        x+=`</div>`}}
+    x+=`</fieldset>`;
+    const i=F.questions.indexOf(q);
+    x+=`<div class="qe-actions"><button type="button" class="btn small" data-act="up"${i===0?' disabled':''}>Move up</button><button type="button" class="btn small" data-act="down"${i===F.questions.length-1?' disabled':''}>Move down</button><button type="button" class="btn small" data-act="dup">Duplicate</button><button type="button" class="btn small danger" data-act="del">Delete</button></div>`;
+    return `<div class="qe">${x}</div>`}
+  function renderList(){const L_=$('#qlist');$('#qEmpty').hidden=F.questions.length>0;
+    L_.innerHTML=F.questions.map((q,i)=>{const T=TYPES[q.type],sel=q.id===selQ;const dep=q.cond&&qById(q.cond.q);
+      return `<li class="qi${sel?' sel':''}" data-id="${q.id}"><div class="qi-row"><span class="grip" title="Drag to reorder" aria-hidden="true">⋮⋮</span><span class="chip">${T.ic}</span><span class="qi-num">${i+1}</span><button type="button" class="qi-title" data-act="select" aria-expanded="${sel}">${esc(q.label||'Untitled question')}${q.req?'<span class="req" aria-label="required">*</span>':''}</button>${dep?`<span class="badge cond" title="Shown only when “${esc(dep.label)}” matches">If…</span>`:''}<span class="qi-type">${T.n}</span></div>${sel?editorHTML(q):''}</li>`}).join('')}
+  const qlist=$('#qlist');
+  qlist.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const li=b.closest('.qi'),q=qById(li.dataset.id),i=F.questions.indexOf(q);
+    switch(b.dataset.act){
+      case 'select':selQ=selQ===q.id?null:q.id;renderList();return;
+      case 'up':if(i>0){F.questions.splice(i,1);F.questions.splice(i-1,0,q);fixConds()}break;
+      case 'down':if(i<F.questions.length-1){F.questions.splice(i,1);F.questions.splice(i+1,0,q);fixConds()}break;
+      case 'dup':{const c=JSON.parse(JSON.stringify(q));c.id=uid(6);c.label=q.label+' (copy)';c.name='';F.questions.splice(i+1,0,c);selQ=c.id;break}
+      case 'del':if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Tap again to delete';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent='Delete'}},3000);return}
+        F.questions.splice(i,1);F.questions.forEach(x=>{if(x.cond&&x.cond.q===q.id)x.cond=null});selQ=(F.questions[i]||F.questions[i-1]||{}).id||null;break}
+    changed();renderList()});
+  function fixConds(){const pos=Object.fromEntries(F.questions.map((q,i)=>[q.id,i]));let n=0;F.questions.forEach((q,i)=>{if(q.cond&&q.cond.q&&!(pos[q.cond.q]<i)){q.cond=null;n++}});if(n)toast(`${n} condition${n>1?'s were':' was'} removed because the question it depends on is now below it.`)}
+  function setK(q,k,el){const v=el.type==='checkbox'?el.checked:el.value;
+    if(k==='opts'){const old=q.opts||[];q.opts=v.split('\n').map(s=>s.trim()).filter(Boolean);if(q.def&&q.type!=='multi'&&!q.opts.includes(q.def))q.def='';return old.join('|')!==q.opts.join('|')?'soft':null}
+    if(k==='cond.q'){q.cond=v?{q:v,op:'eq',v:''}:null;return 'full'}
+    if(k.startsWith('cond.')){if(!q.cond)return;q.cond[k.slice(5)]=v;return k==='cond.op'?'full':null}
+    if(k==='min'||k==='max'){q[k]=v===''?'':(q.type==='date'?v:Number(v));return null}
+    if(k==='def'&&['number','scale','rating'].includes(q.type)){q.def=v===''?'':Number(v);return null}
+    q[k]=v;return k==='req'?'full':null}
+  qlist.addEventListener('input',e=>{const el=e.target.closest('[data-k]');if(!el||el.tagName==='SELECT'||el.type==='checkbox')return;const q=qById(el.closest('.qi').dataset.id);setK(q,el.dataset.k,el);
+    if(el.dataset.k==='label'){const t=$('.qi-title',el.closest('.qi'));t.firstChild.nodeValue=el.value||'Untitled question'}changed()});
+  qlist.addEventListener('change',e=>{const el=e.target.closest('[data-k]');if(!el)return;const q=qById(el.closest('.qi').dataset.id);const r=setK(q,el.dataset.k,el);changed();
+    if(r==='full'||el.dataset.k==='opts')renderList()});
+  /* drag to reorder */
+  let dragId=null;
+  qlist.addEventListener('pointerdown',e=>{const g=e.target.closest('.grip');if(g)g.closest('.qi').draggable=true});
+  qlist.addEventListener('dragstart',e=>{const li=e.target.closest('.qi');if(!li||!li.draggable)return;dragId=li.dataset.id;li.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragId)}catch(x){}});
+  qlist.addEventListener('dragover',e=>{if(!dragId)return;e.preventDefault();const li=e.target.closest('.qi');$$('.qi',qlist).forEach(x=>x.classList.remove('drop-before','drop-after'));if(!li||li.dataset.id===dragId)return;const r=li.getBoundingClientRect();li.classList.add(e.clientY>r.top+r.height/2?'drop-after':'drop-before')});
+  qlist.addEventListener('drop',e=>{if(!dragId)return;e.preventDefault();const li=e.target.closest('.qi');if(li&&li.dataset.id!==dragId){const after=li.classList.contains('drop-after');const q=qById(dragId);F.questions.splice(F.questions.indexOf(q),1);let j=F.questions.findIndex(x=>x.id===li.dataset.id);F.questions.splice(after?j+1:j,0,q);fixConds();changed()}dragId=null;renderList()});
+  qlist.addEventListener('dragend',()=>{dragId=null;$$('.qi',qlist).forEach(x=>{x.draggable=false;x.classList.remove('dragging','drop-before','drop-after')})});
+  function renderPreview(){if(preview)preview.destroy();const el=$('#preview'),st=el.scrollTop;preview=renderForm(el,F,{preview:true,collector:()=>'Preview',onSubmit:()=>{toast('Preview checked the answers. Nothing was saved or sent.','ok')}});el.scrollTop=st}
+
+  /* ---- location tab ---- */
+  function renderLocation(){const g=F.geo,el=$('#tab-location');
+    if(locMap){locMap.remove();locMap=null}
+    const seg=(name,val,opts)=>`<div class="segs" role="group">${opts.map(([v,l])=>`<button type="button" data-${name}="${v}" aria-pressed="${val===v}">${l}</button>`).join('')}</div>`;
+    el.innerHTML=`<div class="tab-head"><div><h2>Location</h2><p>Choose what collectors map with each record and how they place it.</p></div></div>
+    <div class="two"><div class="card stack">
+      <p class="eyebrow">What to map</p>${seg('geo',g.type,[['none','No location'],['point','Point'],['line','Line'],['polygon','Area']])}
+      <p class="micro">${{none:'Records have no location.',point:'One spot per record: a building, a tree, an incident.',line:'A path per record: a road, a pipe, a walking route.',polygon:'An outline per record: a plot, a field, a flooded zone.'}[g.type]}</p>
+      ${g.type==='none'?'':`
+      <label class="chk"><input type="checkbox" id="geoReq"${g.req!==false?' checked':''}> Location is required</label>
+      <p class="eyebrow" style="margin-top:6px">How collectors place it</p>
+      <label class="chk"><input type="checkbox" id="geoGps"${g.gps!==false?' checked':''}> GPS from the phone</label>
+      <label class="chk"><input type="checkbox" id="geoTap"${g.tap!==false?' checked':''}> Tapping the map</label>
+      <label class="f">GPS accuracy target (metres)<input type="number" id="geoAcc" min="1" max="500" value="${esc(g.acc??15)}" style="max-width:140px"></label>
+      <div class="row">${[5,10,15,30,50].map(n=>`<button type="button" class="btn small" data-acc="${n}" aria-pressed="${+g.acc===n}">±${n} m</button>`).join('')}</div>
+      <p class="micro">Collectors see the live accuracy. If it is worse than the target, they are told to wait or move to open sky, and can still capture if they must. The accuracy is saved with each record.</p>
+      <p class="eyebrow" style="margin-top:6px">Background map</p>${seg('base',g.base||'streets',[['streets','Streets'],['satellite','Satellite']])}
+      <label class="chk"><input type="checkbox" id="geoSwitch"${g.switch!==false?' checked':''}> Let collectors switch between streets and satellite</label>`}
+    </div>
+    ${g.type==='none'?'':`<div class="card stack"><p class="eyebrow">Start view</p><p class="micro">Where the map opens before GPS finds the collector. Pan and zoom to your survey area, then save the view.</p><div id="locMap" class="mini-map"></div><div class="row"><button type="button" class="btn primary small" id="useView">Use this view</button><span class="mono micro" id="locView">${g.center?g.center.map(n=>(+n).toFixed(4)).join(', '):''} · zoom ${g.zoom||2}</span></div></div>`}</div>`;
+    el.onclick=e=>{const b=e.target.closest('[data-geo],[data-base],[data-acc],#useView');if(!b)return;
+      if(b.dataset.geo){g.type=b.dataset.geo;changed();renderLocation();return}
+      if(b.dataset.base){g.base=b.dataset.base;changed();renderLocation();return}
+      if(b.dataset.acc){g.acc=+b.dataset.acc;changed();renderLocation();return}
+      if(b.id==='useView'&&locMap){const c=locMap.getCenter();g.center=[+c.lat.toFixed(5),+c.lng.toFixed(5)];g.zoom=locMap.getZoom();changed();$('#locView').textContent=`${g.center.join(', ')} · zoom ${g.zoom}`;toast('Start view saved.','ok')}};
+    el.onchange=e=>{const t=e.target;if(t.id==='geoReq')g.req=t.checked;else if(t.id==='geoGps'||t.id==='geoTap'){g[t.id==='geoGps'?'gps':'tap']=t.checked;if(!g.gps&&!g.tap){g[t.id==='geoGps'?'tap':'gps']=true;toast('Collectors need at least one way to place the location.');renderLocation()}}
+      else if(t.id==='geoAcc'){g.acc=Math.max(1,Math.min(500,+t.value||15))}else if(t.id==='geoSwitch')g.switch=t.checked;else return;changed()};
+    if(g.type!=='none'&&window.L){try{locMap=L.map('locMap').setView(g.center||[20,10],g.zoom||2);tiles()[g.base==='satellite'?'satellite':'streets'].addTo(locMap)}catch(e){}}}
+
+  /* ---- share tab ---- */
+  function hostURL(){if(!EMBED)return location.origin+location.pathname;return store.get('gvc.host','')}
+  function formLink(){const h=hostURL();return h?h.split('#')[0]+'#f='+encodeForm(linkPayload(F)):''}
+  function renderShare(){const el=$('#tab-share'),link=formLink(),d=F.dest,destOk=d.kind==='none'||!!d.url;
+    el.innerHTML=`<div class="tab-head"><div><h2>Share</h2><p>Send the link, show the QR code, or put up the poster. The form opens in any phone browser. Nothing to install from an app store.</p></div></div>
+    <div class="two"><div class="stack">
+      ${EMBED?`<div class="card stack"><p class="eyebrow">Where the app lives</p><p class="micro">Collectors' phones need the app at a web address you control. Upload the three app files (index.html, sw.js, manifest.json and the icons) to any HTTPS host, such as GitHub Pages or Netlify, then paste the address here. Opening that address yourself gives you this same designer with live data working.</p><label class="f">App address<input type="url" id="hostIn" placeholder="https://yourname.github.io/collector/" value="${esc(store.get('gvc.host',''))}"></label></div>`:''}
+      <div class="card stack"><p class="eyebrow">Form link</p>
+        ${link?`<div class="linkrow"><label for="shareLink" class="sr">Form link</label><input id="shareLink" readonly value="${esc(link)}"><button type="button" class="btn primary" id="copyLink">Copy link</button><a class="btn" href="${esc(link)}" target="_blank" rel="noopener">Open</a></div><p class="micro mono">${link.length.toLocaleString()} characters</p>`:'<p class="note">Add the app address above to get the link and QR code.</p>'}
+        ${destOk?'':`<p class="note bad">Records will stay on phones until you finish the Destination tab. You can share now and connect the sheet later, but collectors will need the new link afterwards.</p>`}
+        <dl class="kv"><dt>Location</dt><dd>${F.geo.type==='none'?'None':{point:'Point',line:'Line',polygon:'Area'}[F.geo.type]+` · ${[F.geo.gps!==false?'GPS':'',F.geo.tap!==false?'tap map':''].filter(Boolean).join(' + ')}`}</dd>
+        <dt>Records go to</dt><dd>${d.kind==='sheet'?(d.url?'Your Google Sheet':'Google Sheet, not connected yet'):d.kind==='webhook'?(d.url?'Your server':'Server, not set yet'):'Phones only, exported as files'}</dd>
+        <dt>Questions</dt><dd>${F.questions.length}</dd></dl>
+      </div>
+      <div class="card stack"><p class="eyebrow">What the link contains</p><p class="micro">The questions, the map settings, the destination address and a submit token. Anyone with the link can send records but cannot read them. The read key for your records stays in this browser and in your sheet's script. If you change the form, share the new link; records from the old link still arrive.</p></div>
+      <div class="card stack"><p class="eyebrow">On the phone</p><ol class="steps"><li><span>Open the link or scan the code. Allow location when asked.</span></li><li><span>Add it to the home screen from the status button at the top. It then opens like an app and works with no signal.</span></li><li><span>Fill in the form and tap Save record. Saved records send on their own once the phone is back online.</span></li></ol></div>
+    </div>
+    <div class="stack"><div class="poster" id="poster"><span class="p-eyebrow">Field survey</span><h2>${esc(F.title)}</h2>${F.desc?`<p>${esc(F.desc)}</p>`:''}<div class="qr" id="qr">${link?'':'<p style="line-height:1.4;padding:60px 20px;font-size:13px">QR code appears once the app address is set</p>'}</div><ol><li>Scan with your phone camera</li><li>Allow location when asked</li><li>Fill in and tap Save record</li></ol><p>Works without signal. Records send when you are back online.</p><span class="p-foot">GeoVision Field Collector</span></div>
+      <div class="row" style="justify-content:center">${EMBED?'<span class="micro">Open your hosted copy to print the poster.</span>':'<button type="button" class="btn" id="printPoster">Print poster</button>'}</div></div></div>`;
+    if(link&&window.QRCode){try{const qr=$('#qr');new QRCode(qr,{text:link,width:440,height:440,colorDark:'#000000',colorLight:'#ffffff',correctLevel:link.length>1200?QRCode.CorrectLevel.L:QRCode.CorrectLevel.M})}catch(e){$('#qr').innerHTML='<p style="line-height:1.4;padding:40px 16px;font-size:13px">This form is too long for a QR code. Share the link instead, or shorten choices and hints.</p>'}}
+    else if(link)$('#qr').innerHTML='<p style="line-height:1.4;padding:40px 16px;font-size:13px">The QR library did not load. Reload the page with internet on.</p>';
+    el.onclick=e=>{if(e.target.id==='copyLink')copyText(link,e.target);if(e.target.id==='printPoster'){$('#printArea').innerHTML=$('#poster').outerHTML;window.print()}};
+    const hi=$('#hostIn');if(hi)hi.onchange=()=>{let v=hi.value.trim();if(v&&!/^https?:\/\//.test(v))v='https://'+v;store.set('gvc.host',v);renderShare()}}
+
+  /* ---- destination tab ---- */
+  function scriptFor(){return `/**
+ * GeoVision Field Collector receiver
+ * Form: ${F.title.replace(/\*\//g,'')}
+ * Generated ${today()}. Paste into Extensions > Apps Script, then Deploy > New deployment > Web app.
+ * New questions add new columns automatically; you only redeploy if you change the keys below.
+ */
+const SUBMIT_TOKEN = ${JSON.stringify(F.token)};   // sent by collectors' phones with each record
+const READ_KEY     = ${JSON.stringify(F.readKey)}; // used only by your GeoVision designer to read records
+const FORM_TITLE   = ${JSON.stringify(F.title)};
+const SHEET_NAME   = 'Records';
+const PHOTO_FOLDER = ${JSON.stringify('GeoVision photos - '+F.title)};
+const BASE = ['id','submitted_at','collected_at','collector','geometry_type','latitude','longitude','accuracy_m','geometry'];
+
+function doPost(e) {
+  let body;
+  try { body = JSON.parse(e.postData.contents); } catch (err) { return reply_({ ok: false, error: 'Request body is not JSON.' }); }
+  if (!body || body.token !== SUBMIT_TOKEN) return reply_({ ok: false, error: 'Submit token does not match this sheet.' });
+  const r = body.record || {};
+  if (!r.id) return reply_({ ok: false, error: 'Record has no id.' });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sh = sheet_();
+    if (exists_(sh, r.id)) return reply_({ ok: true, id: r.id, duplicate: true });
+    const g = r.geometry || null;
+    const c = centroid_(g);
+    const row = {
+      id: r.id, submitted_at: new Date().toISOString(), collected_at: r.collected_at || '',
+      collector: r.collector || '', geometry_type: g ? g.type : '',
+      latitude: c ? c[1] : '', longitude: c ? c[0] : '',
+      accuracy_m: r.accuracy == null ? '' : r.accuracy, geometry: g ? JSON.stringify(g) : ''
+    };
+    const photoKeys = r.photoKeys || [];
+    const fields = r.fields || {};
+    Object.keys(fields).forEach(function (k) {
+      const v = fields[k];
+      if (photoKeys.indexOf(k) >= 0) {
+        const list = Array.isArray(v) ? v : [v];
+        row[k] = list.map(function (d, i) { return savePhoto_(d, r.id + '_' + k + '_' + (i + 1)); }).join('\\n');
+      } else {
+        row[k] = Array.isArray(v) ? v.join(', ') : v;
+      }
+    });
+    const headers = headers_(sh, Object.keys(row));
+    sh.appendRow(headers.map(function (h) { return row[h] === undefined ? '' : row[h]; }));
+    return reply_({ ok: true, id: r.id });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  if (p.key !== READ_KEY) return reply_({ ok: false, error: 'Read key does not match this sheet.' });
+  const sh = sheet_();
+  const last = sh.getLastRow();
+  if (p.ping) return reply_({ ok: true, form: FORM_TITLE, records: Math.max(0, last - 1) });
+  const after = Math.max(1, parseInt(p.after || '1', 10) || 1);
+  if (last <= after) return reply_({ ok: true, rows: [], last: last });
+  const cols = sh.getLastColumn();
+  const head = sh.getRange(1, 1, 1, cols).getValues()[0];
+  const data = sh.getRange(after + 1, 1, last - after, cols).getValues();
+  const rows = data.map(function (vals) {
+    const o = {};
+    head.forEach(function (h, i) { const v = vals[i]; o[h] = v instanceof Date ? v.toISOString() : v; });
+    return o;
+  });
+  return reply_({ ok: true, rows: rows, last: last });
+}
+
+// Optional: run once from the editor to approve Sheets and Drive access before deploying.
+function setup() { sheet_(); folder_(); }
+
+function sheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) { sh = ss.insertSheet(SHEET_NAME); sh.appendRow(BASE); sh.setFrozenRows(1); }
+  return sh;
+}
+function headers_(sh, keys) {
+  const n = Math.max(1, sh.getLastColumn());
+  let head = sh.getRange(1, 1, 1, n).getValues()[0].filter(String);
+  const missing = keys.filter(function (k) { return head.indexOf(k) < 0; });
+  if (missing.length) { sh.getRange(1, head.length + 1, 1, missing.length).setValues([missing]); head = head.concat(missing); }
+  return head;
+}
+function exists_(sh, id) {
+  const n = sh.getLastRow();
+  if (n < 2) return false;
+  return !!sh.getRange(2, 1, n - 1, 1).createTextFinder(id).matchEntireCell(true).findNext();
+}
+function savePhoto_(dataUrl, name) {
+  const m = /^data:(image\\/[\\w+.-]+);base64,(.+)$/.exec(String(dataUrl || ''));
+  if (!m) return String(dataUrl || '');
+  const ext = m[1] === 'image/png' ? '.png' : '.jpg';
+  const blob = Utilities.newBlob(Utilities.base64Decode(m[2]), m[1], name + ext);
+  return folder_().createFile(blob).getUrl();
+}
+function folder_() {
+  const it = DriveApp.getFoldersByName(PHOTO_FOLDER);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(PHOTO_FOLDER);
+}
+function centroid_(g) {
+  if (!g || !g.coordinates) return null;
+  if (g.type === 'Point') return g.coordinates;
+  const pts = g.type === 'Polygon' ? g.coordinates[0].slice(0, -1) : g.coordinates;
+  let x = 0, y = 0;
+  pts.forEach(function (p) { x += p[0]; y += p[1]; });
+  return [x / pts.length, y / pts.length];
+}
+function reply_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+`}
+  function renderDest(){const el=$('#tab-destination'),d=F.dest;
+    const opt=(k,t,s)=>`<button type="button" class="dest-opt" data-kind="${k}" aria-pressed="${d.kind===k}"><b>${t}</b><span>${s}</span></button>`;
+    let body='';
+    if(d.kind==='sheet')body=`<div class="two"><div class="card stack"><p class="eyebrow">Connect your Google Sheet · about 3 minutes, once</p>
+      <ol class="steps">
+        <li><span>Create a new Google Sheet at <a href="https://sheets.new" target="_blank" rel="noopener">sheets.new</a>. Name it after this form.</span></li>
+        <li><span>In the sheet, open <b>Extensions › Apps Script</b>. Delete the sample code, paste the script on the right, and click <b>Save</b>.</span></li>
+        <li><span>Click <b>Deploy › New deployment</b>. Choose type <b>Web app</b>. Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>. Click <b>Deploy</b> and approve the permissions for Sheets and Drive.</span></li>
+        <li><span>Copy the <b>Web app URL</b> (it ends in <span class="mono">/exec</span>) and paste it below.</span></li>
+        <li><span>Click <b>Test connection</b>. Then share the form from the Share tab.</span></li>
+      </ol>
+      <label class="f">Web app URL<input type="url" id="destUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(d.url||'')}"></label>
+      <div class="row"><button type="button" class="btn primary" id="testConn">Test connection</button><span class="status-line" id="testMsg"></span></div>
+      ${EMBED?'<p class="note">This preview runs inside Claude and cannot contact Google. Open your hosted copy of the app to test the connection and run the live map.</p>':''}
+      <p class="micro">Records land in a tab called Records, one row each, with a column per question. Photos and signatures go to a Drive folder named “GeoVision photos - ${esc(F.title)}”; the sheet stores their links. The folder stays private to you.</p>
+    </div><div class="card stack"><div class="row" style="justify-content:space-between"><p class="eyebrow">Script for this form</p>${EMBED?'':'<button type="button" class="btn small" id="dlScript">Download .gs</button>'}</div>
+      <div class="code"><pre id="scriptPre" tabindex="0">${esc(scriptFor())}</pre><button type="button" class="btn small primary" id="copyScript">Copy script</button></div>
+      <p class="micro">The script holds this form's submit token and read key. If a link has leaked, make new keys, paste the new script, and deploy a new version (Deploy › Manage deployments › Edit › New version). Old links then stop working.</p>
+      <div class="row"><button type="button" class="btn small danger" id="regen">Make new keys</button></div></div></div>`;
+    else if(d.kind==='webhook')body=`<div class="two"><div class="card stack"><p class="eyebrow">Send to your own server</p>
+      <label class="f">Webhook URL<input type="url" id="destUrl" placeholder="https://example.org/api/records" value="${esc(d.url||'')}"></label>
+      <p class="micro">Each record is sent as an HTTPS POST with a JSON body. Your server must reply with a 2xx status and allow cross-origin requests from the app's address (Access-Control-Allow-Origin, and accept Content-Type application/json). Check the token before storing a record, and ignore an id you already have, since phones retry until they get a 2xx reply.</p>
+      <p class="micro">The live map reads from Google Sheets. With a webhook, use the import below the live map for files, or view records in your own system.</p></div>
+      <div class="card stack"><p class="eyebrow">Example body</p><div class="code"><pre>${esc(JSON.stringify({token:F.token,form:{id:F.id,title:F.title},record:{id:'r…',form:F.id,collected_at:new Date().toISOString(),collector:'Aisha',geometry:{type:'Point',coordinates:[55.3912,25.3463]},accuracy:6,fields:{[colNames(F)[(F.questions[0]||{}).id]||'site_name']:'…'},photoKeys:[]}},null,2))}</pre></div><p class="micro">Photos arrive inside fields as JPEG data URLs.</p></div></div>`;
+    else body=`<div class="card stack"><p class="eyebrow">Phones only</p><p>Records stay on each phone. Collectors open the status button at the top of the form and export a GeoJSON or CSV file, then send it to you by message or email. In Live data, use <b>Import files from phones</b> to merge everything; duplicates are skipped.</p></div>`;
+    el.innerHTML=`<div class="tab-head"><div><h2>Destination</h2><p>Where records go once a phone has internet.</p></div></div>
+      <div class="dest-opts" style="margin-bottom:16px">${opt('sheet','Google Sheet','Rows in your sheet, photos in your Drive. Powers the live map.')}${opt('webhook','My server','POST each record as JSON to your own endpoint.')}${opt('none','Phones only','No internet needed. Collectors export files and send them to you.')}</div>${body}`;
+    el.onclick=async e=>{const t=e.target;const k=t.closest('[data-kind]');
+      if(k){if(F.dest.kind!==k.dataset.kind){F.dest={kind:k.dataset.kind,url:''};changed();renderDest()}return}
+      if(t.id==='copyScript'){if(!(await copyText(scriptFor(),t))){const r=document.createRange();r.selectNodeContents($('#scriptPre'));const s=getSelection();s.removeAllRanges();s.addRange(r)}}
+      if(t.id==='dlScript')download(slug(F.title)+'_receiver.gs',scriptFor(),'text/plain');
+      if(t.id==='regen'){if(t.dataset.armed!=='1'){t.dataset.armed='1';t.textContent='Tap again: old links will stop working';setTimeout(()=>{if(t.isConnected){t.dataset.armed='';t.textContent='Make new keys'}},4000);return}F.token=uid(16);F.readKey=uid(24);changed();renderDest();toast('New keys made. Paste the new script and deploy a new version.','ok')}
+      if(t.id==='testConn'){const m=$('#testMsg');if(!F.dest.url){m.textContent='Paste the Web app URL first.';m.className='status-line bad';return}m.textContent='Testing…';m.className='status-line';
+        try{const res=await fetch(F.dest.url+(F.dest.url.includes('?')?'&':'?')+'ping=1&key='+encodeURIComponent(F.readKey));const j=await res.json();if(!j.ok)throw new Error(j.error);m.textContent=`Connected to the sheet. ${j.records} record${j.records===1?'':'s'} so far.`;m.className='status-line good'}
+        catch(err){m.className='status-line bad';m.textContent=err.message&&err.message.includes('Read key')?'The sheet answered, but its script has different keys. Paste the current script and deploy a new version.':EMBED?'This preview cannot reach Google. Test from your hosted copy.':'Could not reach the script. Check the URL ends in /exec and access is set to Anyone.'}}};
+    const du=$('#destUrl');if(du)du.oninput=()=>{F.dest.url=du.value.trim();changed()}}
+
+  /* ---- live tab ---- */
+  function ensureLiveMap(){if(liveMap||!window.L)return;try{liveMap=L.map('liveMap').setView(F.geo.center||[20,10],F.geo.zoom||2);const t=tiles();t.streets.addTo(liveMap);L.control.layers({Streets:t.streets,Satellite:t.satellite},null,{position:'topright',collapsed:false}).addTo(liveMap);liveLayer=L.featureGroup().addTo(liveMap)}catch(e){}}
+  function renderLive(){ensureLiveMap();setTimeout(()=>liveMap&&liveMap.invalidateSize(),40);drawLive();const d=F.dest;
+    if(!liveTimer)setLiveMsg(d.kind==='sheet'&&d.url?`Ready to read from your Google Sheet. ${EMBED?'This preview inside Claude cannot reach Google; open your hosted copy to run the live map.':''}`:d.kind==='sheet'?'Connect the Google Sheet in Destination to use the live map. You can still import files below.':'The live map reads from a Google Sheet. Records from files you import below show here too.')}
+  function setLiveMsg(m,bad){const e=$('#liveMsg');e.textContent=m;e.className='status-line'+(bad?' bad':'')}
+  function popHTML(r){const f=r.fields||{};return `<div class="pop"><b>${esc(recSummary(r))}</b><br><span class="micro">${esc(r.collector||'Unknown')} · ${r.collected_at?new Date(r.collected_at).toLocaleString():''}${r.accuracy!=null?' · ±'+r.accuracy+' m':''}</span><dl>${Object.keys(f).map(k=>{const v=f[k];const vs=Array.isArray(v)?v:String(v??'').split('\n');const html=vs.map(x=>typeof x==='string'&&x.startsWith('data:image')?`<img src="${x}" alt="">`:typeof x==='string'&&/^https?:\/\//.test(x)?`<a href="${esc(x)}" target="_blank" rel="noopener">Open photo</a>`:esc(x)).join(Array.isArray(v)&&typeof v[0]==='string'&&!String(v[0]).startsWith('data:')?', ':' ');return `<dt>${esc(k)}</dt><dd>${html}</dd>`}).join('')}</dl></div>`}
+  function drawLive(){const S=live(),recs=[...S.recs.values()].sort((a,b)=>String(b.collected_at).localeCompare(String(a.collected_at)));const now=Date.now(),day=today();
+    $('#cTotal').textContent=recs.length;$('#cToday').textContent=recs.filter(r=>{const t=Date.parse(r.collected_at);if(!t)return false;const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())===day}).length;
+    $('#cHour').textContent=recs.filter(r=>now-Date.parse(r.collected_at)<3600e3).length;$('#cWho').textContent=new Set(recs.map(r=>r.collector).filter(Boolean)).size;
+    $('#feed').innerHTML=recs.length?recs.slice(0,60).map(r=>{const fresh=r._new&&now-r._new<15000;return `<li class="rec${fresh?' fresh':''}"><b>${esc(recSummary(r))}</b>${fresh?'<span class="tag new">New</span>':`<span class="micro">${esc(ago(r.collected_at))}</span>`}<small>${esc(r.collector||'Unknown collector')} · ${r.geometry?r.geometry.type:'no location'}</small></li>`}).join(''):'<li class="micro">No records loaded yet. Start the live map, or import files from phones.</li>';
+    if(!liveMap)return;liveLayer.clearLayers();const col=cssVar('--teal'),acc=cssVar('--accent');
+    recs.forEach(r=>{const g=r.geometry;if(!g||!g.coordinates)return;const fresh=r._new&&now-r._new<15000;let lyr;
+      try{if(g.type==='Point')lyr=L.marker([g.coordinates[1],g.coordinates[0]],{icon:L.divIcon({className:'lv-dot'+(fresh?' pulse':''),iconSize:[16,16]})});
+        else if(g.type==='LineString')lyr=L.polyline(g.coordinates.map(c=>[c[1],c[0]]),{color:fresh?acc:col,weight:fresh?6:4});
+        else if(g.type==='Polygon')lyr=L.polygon(g.coordinates[0].map(c=>[c[1],c[0]]),{color:fresh?acc:col,weight:fresh?4:2,fillOpacity:.2});
+        if(lyr)lyr.bindPopup(()=>popHTML(r),{maxWidth:280}).addTo(liveLayer)}catch(e){}});
+    if(!S.fitted&&liveLayer.getLayers().length){try{liveMap.fitBounds(liveLayer.getBounds(),{padding:[30,30],maxZoom:17});S.fitted=true}catch(e){}}}
+  async function poll(){const S=live(),d=F.dest;if(d.kind!=='sheet'||!d.url){setLiveMsg('Connect the Google Sheet in Destination first.',true);stopLive();return}
+    try{const res=await fetch(d.url+(d.url.includes('?')?'&':'?')+'key='+encodeURIComponent(F.readKey)+'&after='+S.last);const j=await res.json();if(!j.ok)throw new Error(j.error||'The sheet refused the request.');
+      let n=0;(j.rows||[]).forEach(o=>{const r=rowToRec(o);if(!S.recs.has(r.id)){r._new=S.first?0:Date.now();S.recs.set(r.id,r);n++}});S.last=j.last||S.last;const first=S.first;S.first=false;
+      setLiveMsg(`Updated ${new Date().toLocaleTimeString()}. ${first?`${S.recs.size} records loaded.`:n?`${n} new record${n>1?'s':''}.`:'No new records.'} Next check in ${$('#liveEvery').selectedOptions[0].textContent}.`);drawLive();if(n&&!first)setTimeout(drawLive,15500)}
+    catch(e){setLiveMsg(EMBED?'This preview inside Claude cannot reach Google. Open your hosted copy of the app to run the live map.':`Could not read the sheet: ${e.message==='Failed to fetch'?'no connection, or the script is not deployed for Anyone':e.message}. Trying again on the next refresh.`,true)}}
+  function startLive(){stopLive();poll();liveTimer=setInterval(poll,(+$('#liveEvery').value||10)*1000);$('#liveBtn').textContent='Stop live map'}
+  function stopLive(){if(liveTimer)clearInterval(liveTimer);liveTimer=null;const b=$('#liveBtn');if(b)b.textContent='Start live map'}
+  $('#liveBtn').addEventListener('click',()=>liveTimer?(stopLive(),setLiveMsg('Live map stopped.')):startLive());
+  $('#liveEvery').addEventListener('change',()=>{store.set('gvc.every',$('#liveEvery').value);if(liveTimer)startLive()});
+  $('#liveEvery').value=store.get('gvc.every','10');
+  $('#importIn').addEventListener('change',async e=>{const S=live();let add=0,skip=0,bad=[];for(const f of e.target.files){try{const recs=parseImport(await f.text());recs.forEach(r=>{if(S.recs.has(r.id))skip++;else{r._new=Date.now();S.recs.set(r.id,r);add++}})}catch(x){bad.push(f.name)}}e.target.value='';S.fitted=false;
+    const m=$('#importMsg');m.textContent=`Added ${add} record${add===1?'':'s'}, skipped ${skip} duplicate${skip===1?'':'s'}.${bad.length?` Could not read ${bad.join(', ')}; check that it is a GeoJSON or CSV export.`:''}`;m.className='status-line'+(bad.length?' bad':'');drawLive();setTimeout(drawLive,15500)});
+  const allRecs=()=>[...live().recs.values()].map(r=>{const o=Object.assign({},r);delete o._new;return o});
+  $('#expAllGeo').addEventListener('click',()=>{const r=allRecs();if(!r.length)return toast('No records loaded to export.');if(EMBED)return toast('Downloads are blocked in this preview. Use your hosted copy.','bad');download(slug(F.title)+'_merged_'+today()+'.geojson',JSON.stringify(toGeoJSON(r,F.title)),'application/geo+json')});
+  $('#expAllCsv').addEventListener('click',()=>{const r=allRecs();if(!r.length)return toast('No records loaded to export.');if(EMBED)return toast('Downloads are blocked in this preview. Use your hosted copy.','bad');download(slug(F.title)+'_merged_'+today()+'.csv',toCSV(r),'text/csv')});
+  $('#clearLive').addEventListener('click',()=>{LIVE[F.id]={recs:new Map(),last:1,first:true,fitted:false};$('#importMsg').textContent='Loaded records cleared from this view. Your sheet is not affected.';drawLive()});
+
+  function renderAll(){renderFormSel();renderDesign();if(tab!=='design')setTab(tab,true)}
+  renderAll();
+  const h=location.hash.slice(1);setTab(TABS.includes(h)?h:'design',true);
+}
+
+/* ================= boot ================= */
+function boot(){
+  if(!EMBED&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+  const m=/^#f=(.+)$/.exec(location.hash);
+  if(m){try{startCollector(decodeForm(m[1]));return}catch(e){document.body.innerHTML='<main class="c-main gut"><h2>This form link is incomplete</h2><p>Part of the link may have been cut off when it was copied. Ask your coordinator to send it again, or scan the QR code.</p></main>';return}}
+  if(/[?&]app\b/.test(location.search)){const last=store.get('gvc.lastForm',null);if(last){startCollector(last);return}}
+  startDesigner();
+}
+boot();
+})();
+</script>
+
+</body>
+</html>

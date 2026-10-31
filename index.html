@@ -367,6 +367,7 @@ dl.kv dt{color:var(--muted)}dl.kv dd{margin:0;overflow-wrap:anywhere}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 
 <div id="designer" hidden>
   <header class="d-top">
@@ -788,7 +789,7 @@ const DB={_p:null,mem:new Map(),
 
 /* ================= COLLECTOR ================= */
 function startCollector(form){
-  store.set('gvc.lastForm',form);document.title=form.title+' · GeoVision';document.body.classList.add('is-collector');
+  rememberForm(form);document.title=form.title+' · GeoVision';document.body.classList.add('is-collector');
   const d=form.dest||{},dest=d.kind&&d.kind!=='none'&&d.url;
   const root=$('#collector');root.hidden=false;
   root.innerHTML=`<header class="c-top"><div class="c-top-in gut"><div class="brand sm"><span class="brand-mark" aria-hidden="true"></span><b>GeoVision</b><span>Collector</span></div><button type="button" class="pill" id="syncPill" aria-haspopup="dialog"><span class="dot"></span>Ready</button></div></header>
@@ -801,7 +802,7 @@ function startCollector(form){
     <div class="sheet-head"><h2 id="recTitle">My records</h2><button type="button" class="btn ghost small" data-x>Close</button></div>
     <div class="stats" id="recStats"></div>
     <p class="status-line" id="syncErr" hidden></p>
-    <div class="row">${dest?'<button type="button" class="btn primary" id="sendNow">Send now</button>':''}<button type="button" class="btn" id="expGeo">Export GeoJSON</button><button type="button" class="btn" id="expCsv">Export CSV</button></div>
+    <div class="row">${dest?'<button type="button" class="btn primary" id="sendNow">Send now</button>':''}<button type="button" class="btn" id="expGeo">Export GeoJSON</button><button type="button" class="btn" id="expCsv">Export CSV</button><button type="button" class="btn ghost" id="allForms">All forms</button></div>
     <p class="micro">No internet? Export a file and send it to your coordinator by message or email. GeoJSON keeps your photos; CSV is smaller and opens in Excel.</p>
     <ol class="rec-list" id="recList"></ol>
     <div class="note" id="installBox"></div>
@@ -829,9 +830,10 @@ function startCollector(form){
   const fname=ext=>`${slug(form.title)}_${slug(who.value||'collector')}_${today()}.${ext}`;
   async function exp(kind){const all=await mine();if(!all.length){toast('There are no records to export yet.');return}
     const recs=all.map(clean),txt=kind==='geojson'?JSON.stringify(toGeoJSON(recs,form.title)):toCSV(recs),mime=kind==='geojson'?'application/geo+json':'text/csv',name=fname(kind);
+    if(NATIVE){try{const P=window.Capacitor.Plugins;const w=await P.Filesystem.writeFile({path:name,data:txt,directory:'CACHE',encoding:'utf8'});await P.Share.share({title:form.title,files:[w.uri],dialogTitle:'Send records to your coordinator'})}catch(e){if(!/cancel/i.test(e.message||''))toast('Could not share the file: '+(e.message||e),'bad')}return}
     try{const file=new File([txt],name,{type:mime});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:form.title});return}}catch(e){if(e.name==='AbortError')return}
     download(name,txt,mime);toast('File saved to your downloads. Send it to your coordinator.','ok')}
-  root.addEventListener('click',e=>{const id=e.target.id;if(id==='expGeo')exp('geojson');else if(id==='expCsv')exp('csv');else if(id==='sendNow'){lastErr='';sync()}});
+  root.addEventListener('click',e=>{const id=e.target.id;if(id==='expGeo')exp('geojson');else if(id==='expCsv')exp('csv');else if(id==='sendNow'){lastErr='';sync()}else if(id==='allForms')goHome()});
   let deferred=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;installTip()});
   function installTip(){const box=$('#installBox');const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
     if(standalone){box.innerHTML='Installed on this phone. Open it from your home screen, even without internet.';return}
@@ -1193,12 +1195,43 @@ function reply_(o) {
   const h=location.hash.slice(1);setTab(TABS.includes(h)?h:'design',true);
 }
 
+/* ================= APP HOME (installed app / phone) ================= */
+const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+const WEB_APP='https://rgiq2024.github.io/geovision-field-collector/';
+function rememberForm(form){store.set('gvc.lastForm',form);const list=store.get('gvc.phoneForms',[]).filter(f=>f.id!==form.id);list.unshift(Object.assign({},form,{_opened:Date.now()}));store.set('gvc.phoneForms',list.slice(0,20))}
+function openForm(f){location.replace(location.pathname+'#f='+encodeForm(f));location.reload()}
+function goHome(){location.replace(location.pathname+'?app=1&home=1');}
+function formFromText(t){t=String(t||'').trim();const i=t.indexOf('#f=');const code=i>=0?t.slice(i+3):/^[A-Za-z0-9+\-_$.]{40,}$/.test(t)?t:'';if(!code)throw new Error('That is not a form link. It should contain “#f=”.');return decodeForm(code)}
+function readQR(file){return new Promise((res,rej)=>{if(!window.jsQR)return rej(new Error('The QR reader did not load.'));const u=URL.createObjectURL(file),img=new Image();img.onload=()=>{const tries=[1600,1000,700];for(const max of tries){const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);const x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);const d=x.getImageData(0,0,c.width,c.height);const q=jsQR(d.data,c.width,c.height,{inversionAttempts:'attemptBoth'});if(q&&q.data){URL.revokeObjectURL(u);return res(q.data)}}URL.revokeObjectURL(u);rej(new Error('No QR code found in that photo. Fill the frame with the code and try again.'))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('That photo could not be read.'))};img.src=u})}
+function startHome(){
+  document.title='GeoVision Collector';document.body.classList.add('is-collector');
+  const root=$('#collector');root.hidden=false;
+  const draw=()=>{const list=store.get('gvc.phoneForms',[]);
+  root.innerHTML=`<header class="c-top"><div class="c-top-in gut"><div class="brand sm"><span class="brand-mark" aria-hidden="true"></span><b>GeoVision</b><span>Collector</span></div></div></header>
+  <main class="c-main gut">
+    <div class="cf-head"><h2 class="cf-title">Open a form</h2><p class="cf-desc">Scan the QR code your coordinator gave you, or paste the form link.</p></div>
+    <div class="cf-q"><label class="btn primary big photo-add">Scan QR code<input type="file" id="qrIn" accept="image/*" capture="environment"></label>
+      <p class="micro">Your camera opens. Take a photo of the QR code on the poster or screen.</p></div>
+    <div class="cf-q"><label class="cf-label" for="linkIn">Paste a form link</label><div class="linkrow" style="grid-template-columns:minmax(0,1fr) auto"><input id="linkIn" type="url" placeholder="https://…#f=…" autocomplete="off"><button type="button" class="btn" id="linkGo">Open</button></div><p class="cf-err" id="homeErr" hidden></p></div>
+    ${list.length?`<p class="eyebrow" style="margin-top:6px">Forms on this phone</p><ol class="rec-list">${list.map((f,i)=>`<li class="rec"><b>${esc(f.title||'Untitled form')}</b><span><button type="button" class="btn small primary" data-open="${i}">Open</button> <button type="button" class="btn small ghost" data-forget="${i}" aria-label="Remove ${esc(f.title)} from this phone">Remove</button></span><small>${(f.questions||[]).length} questions · ${f.geo&&f.geo.type!=='none'?{point:'point',line:'line',polygon:'area'}[f.geo.type]:'no location'} · opened ${esc(ago(new Date(f._opened||Date.now()).toISOString()))}</small></li>`).join('')}</ol><p class="micro">Removing a form keeps any records you already saved with it.</p>`:''}
+    <p class="c-foot">Designing forms? Open <span class="mono">${esc(WEB_APP.replace('https://',''))}</span> on a computer.</p>
+  </main>`};
+  draw();
+  const err=m=>{const e=$('#homeErr');e.textContent=m||'';e.hidden=!m};
+  root.onclick=e=>{const t=e.target;const list=store.get('gvc.phoneForms',[]);
+    if(t.dataset.open!=null)openForm(list[+t.dataset.open]);
+    else if(t.dataset.forget!=null){if(t.dataset.armed!=='1'){t.dataset.armed='1';t.textContent='Tap again';return}list.splice(+t.dataset.forget,1);store.set('gvc.phoneForms',list);draw()}
+    else if(t.id==='linkGo'){try{openForm(formFromText($('#linkIn').value))}catch(x){err(x.message==='bad link'||x.message==='bad form'?'That link is incomplete. Ask your coordinator to send it again.':x.message)}}};
+  root.onchange=async e=>{if(e.target.id!=='qrIn')return;const f=e.target.files[0];e.target.value='';if(!f)return;toast('Reading the QR code…');try{openForm(formFromText(await readQR(f)))}catch(x){err(x.message==='bad link'||x.message==='bad form'?'The QR code was read but the form inside is incomplete.':x.message);toast(x.message,'bad')}};
+}
+
 /* ================= boot ================= */
 function boot(){
-  if(!EMBED&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if(!EMBED&&!NATIVE&&'serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
   const m=/^#f=(.+)$/.exec(location.hash);
   if(m){try{startCollector(decodeForm(m[1]));return}catch(e){document.body.innerHTML='<main class="c-main gut"><h2>This form link is incomplete</h2><p>Part of the link may have been cut off when it was copied. Ask your coordinator to send it again, or scan the QR code.</p></main>';return}}
-  if(/[?&]app\b/.test(location.search)){const last=store.get('gvc.lastForm',null);if(last){startCollector(last);return}}
+  const app=/[?&]app\b/.test(location.search);
+  if(NATIVE||app){if(!/[?&]home\b/.test(location.search)){const last=store.get('gvc.lastForm',null);if(last){startCollector(last);return}}startHome();return}
   startDesigner();
 }
 boot();

@@ -1,0 +1,76 @@
+name: Android app
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'mobile/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: 1.0.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm run build && npx cap sync android
+
+      - name: Build installable APK
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk GeoVision-Collector.apk
+
+      - name: Build signed Play Store bundle (only when signing secrets are set)
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
+        env:
+          HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        working-directory: mobile/android
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          ./gradlew bundleRelease assembleRelease --no-daemon
+          cp app/build/outputs/bundle/release/app-release.aab ../GeoVision-Collector.aab
+          cp app/build/outputs/apk/release/app-release.apk ../GeoVision-Collector-release.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-app
+          path: |
+            mobile/GeoVision-Collector*.apk
+            mobile/GeoVision-Collector.aab
+          if-no-files-found: ignore
+
+      - name: Publish to the Releases page
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v1.0.${{ github.run_number }}
+          name: Android app 1.0.${{ github.run_number }}
+          body: |
+            Download **GeoVision-Collector.apk** on an Android phone and open it to install.
+            Android asks you to allow installs from your browser or file manager the first time.
+          files: |
+            mobile/GeoVision-Collector*.apk
+            mobile/GeoVision-Collector.aab
+          make_latest: true

@@ -13,6 +13,10 @@ Design field data forms, share them by link, QR code or poster, and collect poin
 - **Offline:** collectors export GeoJSON or CSV from the phone; "Import files from phones" merges them and skips duplicates.
 - **Privacy:** the form link holds only the form and a submit token. The key for reading records stays in your browser and in your script.
 
+## Phone apps
+
+Android and iPhone apps live in [`mobile/`](mobile/README.md). Each push builds an installable Android APK and publishes it on the [Releases page](https://github.com/rgiq2024/geovision-field-collector/releases/latest). The iPhone app needs an Apple Developer account to sign; see the mobile README.
+
 ## Files
 
 | File | Purpose |

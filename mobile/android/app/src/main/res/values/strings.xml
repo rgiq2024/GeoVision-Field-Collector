@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GeoVision Collector</string>
+    <string name="title_activity_main">GeoVision Collector</string>
+    <string name="package_name">io.github.rgiq2024.geovision</string>
+    <string name="custom_url_scheme">io.github.rgiq2024.geovision</string>
+</resources>

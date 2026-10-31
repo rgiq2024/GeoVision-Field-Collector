@@ -1,9 +1,10 @@
 /* GeoVision Field Collector: offline support */
-const CORE = 'gvc-core-v1', RUNTIME = 'gvc-runtime-v1', TILES = 'gvc-tiles-v1';
+const CORE = 'gvc-core-v2', RUNTIME = 'gvc-runtime-v1', TILES = 'gvc-tiles-v1';
 const PRECACHE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
   'https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'];
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'];
 const TILE_HOSTS = ['tile.openstreetmap.org', 'server.arcgisonline.com'];
 const MAX_TILES = 2500;
 

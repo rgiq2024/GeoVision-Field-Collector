@@ -1,0 +1,35 @@
+name: iPhone app
+
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'mobile/**', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run build && npx cap sync ios
+
+      - name: Build for the iPhone Simulator (checks the project compiles; no Apple account needed)
+        working-directory: mobile/ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -target App -configuration Debug \
+            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO SYMROOT="$PWD/build" build
+          cd build/Debug-iphonesimulator && zip -qry "$GITHUB_WORKSPACE/GeoVision-Collector-simulator.zip" App.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-app
+          path: GeoVision-Collector-simulator.zip

@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.rgiq2024.geovision",
+  "appName": "GeoVision Collector",
+  "webDir": "www",
+  "backgroundColor": "#15201C",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never", "scheme": "GeoVision Collector" }
+}
